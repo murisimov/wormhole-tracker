@@ -1,0 +1,56 @@
+{% extends index.html %}
+
+{% block head %}
+  <link rel="stylesheet" href="/static/vendor/Treant.css" />
+{% end %}
+{% block title %}
+
+{% end %}
+
+{% block body %}
+  <br />
+  <div class="row">
+    <div class="text-center">
+      <a href="javascript:void(0)" class="btn btn-warning" id="status">
+        Tracking disabled
+      </a>
+    </div>
+    <br/>
+
+    <div class="" id="warning">
+
+    </div>
+    <br />
+
+    <div class="text-center">
+      <span>
+        <a id="track" class="btn btn-primary">
+          Track
+        </a>
+      </span>
+      <span>
+        <a id="stop" class="btn btn-warning">
+          Untrack
+        </a>
+      </span>
+      <span>
+        <a href="/signout" class="btn btn-danger">
+          Sign out
+        </a>
+      </span>
+    </div>
+    <br />
+
+    <div class="text-center">
+      <div id="tree-simple" style="width: 100%; height: 100%; margin: 0 auto;" class="text-center"> </div>
+    </div>
+  </div>
+{% end %}
+
+{% block script %}
+  <script src="/static/vendor/raphael.min.js"></script>
+  <script scr="/static/vendor/raphael.no-deps.min.js"></script>
+  <script src="/static/vendor/Treant.min.js"></script>
+  <script src="/static/vendor/Treant.min.js.map"></script>
+  <script src="/static/js/main.js"></script>
+{% end %}
