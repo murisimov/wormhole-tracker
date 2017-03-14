@@ -112,6 +112,12 @@ class Router(object):
         return self._treantify('--------', self.tree)
 
     def _treantify(self, sysname, sysobject):
+        """
+        AUXILIARY
+        ---------
+        Purpose:
+            To rebuild the route to data structure that Treant.js can handle
+        """
         result = {
             'text': {'name': sysname},
             'children': [],
