@@ -1,6 +1,9 @@
 # Configuration files
 *.conf
 
+# PyCharm local configuration directory
+.idea/
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
