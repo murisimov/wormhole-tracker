@@ -1,0 +1,108 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          wormhole-tracker
+# Required-Start:    $local_fs $network $named $time $syslog
+# Required-Stop:     $local_fs $network $named $time $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Description:       wormhole-tracker daemon
+### END INIT INFO
+
+APPNAME='wormhole-tracker'
+
+SCRIPT="${HOME}/.envs/${APPNAME}/bin/${APPNAME}"
+
+USER=''
+GROUP=''
+
+if [ ${GROUP} ]; then
+    RUNAS=${GROUP}
+elif [ ${USER} ]; then
+    RUNAS=${USER}
+else
+    RUNAS=$(whoami)
+fi
+
+PIDFILE="/home/${APPNAME}/${APPNAME}.pid"
+LOGFILE="/home/${APPNAME}/${APPNAME}.log"
+
+start() {
+    if ! [ -d ${PIDFILE%/*} ] ; then
+        mkdir -p ${PIDFILE%/*}
+    fi
+    if [ -f ${PIDFILE} ] && kill -0 $(cat ${PIDFILE}); then
+        echo 'Service is already running' >&2
+        return 1
+    fi
+    echo 'Starting service…' >&2
+
+    local CMD="$SCRIPT &> \"$LOGFILE\" & echo \$!"
+
+    # Try to start service
+    if [ ${GROUP} ]; then
+        if sg $RUNAS -c "$CMD"  > "$PIDFILE"; then
+            echo 'Service started' >&2
+            exit 0
+        else
+            echo 'Service start failed!'
+            return 1
+        fi
+    else
+        if su -c "$CMD" $RUNAS > "$PIDFILE"; then
+            echo 'Service started' >&2
+            exit 0
+        else
+            echo 'Service start failed!'
+            return 1
+        fi
+    fi
+
+
+}
+
+stop() {
+    if [ ! -f ${PIDFILE} ] || ! kill -0 $(cat ${PIDFILE}); then
+        echo 'Service not running' >&2
+        return 1
+    fi
+    echo 'Stopping service…' >&2
+    if pkill -TERM -P $(cat ${PIDFILE}) && rm -f ${PIDFILE}; then
+        echo "Service stopped."
+    elif echo 'Parent not found, killing process itself...' && pkill -TERM -F ${PIDFILE} && rm -f ${PIDFILE}; then
+        echo 'Service stopped.'
+    else
+        echo 'Service stop failed!' >&2
+    fi
+}
+
+status() {
+        printf "%-50s" "Checking $APPNAME..."
+    if [ -f $PIDFILE ]; then
+        PID=$(cat $PIDFILE)
+        if [ -z "$(ps axf | grep ${PID} | grep -v grep)" ]; then
+            printf "%s\n" "The process appears to be dead but pidfile still exists"
+        else
+            echo "Running, the PID is $PID"
+        fi
+    else
+        printf "%s\n" "Service not running"
+    fi
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+    echo "Usage: $0 {start|stop|status|restart|reload}"
+esac

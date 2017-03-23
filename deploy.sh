@@ -3,7 +3,7 @@ if [ -z "$(ls . | grep 'deploy.sh')" -o -z "$(ls . | grep 'setup.py')" ]; then
     exit 1
 fi
 
-appname="wormhole_tracker"
+appname="wormhole-tracker"
 envdir="${HOME}/.envs/${appname}"
 daemon="/etc/init.d/${appname}"
 

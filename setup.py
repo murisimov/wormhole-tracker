@@ -1,7 +1,7 @@
 # coding: utf-8
 from setuptools import setup, find_packages
 setup(
-    name='wormhole_tracker',
+    name='wormhole-tracker',
     description='',
     version='0.1a0',
     license='MIT',
@@ -23,7 +23,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'wormhole_tracker = wormhole_tracker.server:main',
+            'wormhole-tracker = wormhole_tracker.server:main',
         ]
     },
 )

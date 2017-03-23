@@ -204,8 +204,8 @@ class SigninHandler(BaseHandler):
             'response_type': 'code',
             'redirect_uri': 'http://%s:%s/auth/' % (options.redirect_uri, options.port),
             'client_id': self.client_id,
-            #'scope': 'characterBookmarksRead characterLocationRead',
-            'scope': 'characterLocationRead',
+            'scope': 'characterBookmarksRead characterLocationRead',
+            #'scope': 'characterLocationRead',
             #'state': str(oid())
             'state': urandom(24),
         })
@@ -332,14 +332,14 @@ class PollingHandler(BaseSocketHandler):
 
 def main():
     try:
-        parse_config_file('/etc/wormhole_tracker.conf')
+        parse_config_file('/etc/wormhole-tracker.conf')
     except:
         parse_command_line()
 
     if not options.client_id or not options.client_key or not options.redirect_uri:
         error = """
 
-Please create configuration file /etc/wormhole_tracker.conf and fill it as follows:
+Please create configuration file /etc/wormhole-tracker.conf and fill it as follows:
 
     client_id = "your_eve_app_id"
     client_key = "your_eve_app_key"
@@ -348,7 +348,7 @@ Please create configuration file /etc/wormhole_tracker.conf and fill it as follo
 
 Or provide this data as command line arguments as follows:
 
-    wormhole_tracker --client_id="your_eve_app_id" --client_key="your_eve_app_key" --redirect_uri="IP_address_of_this_server"
+    wormhole-tracker --client_id="your_eve_app_id" --client_key="your_eve_app_key" --redirect_uri="IP_address_of_this_server"
 
         """
         logging.error(error)
