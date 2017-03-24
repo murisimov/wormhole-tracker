@@ -296,7 +296,8 @@ class PollingHandler(BaseSocketHandler):
                 readable_map = router.build_map(
                     location['solarSystem']['name']
                 )
-                message = ['treant', readable_map]
+                #message = ['treant', readable_map]
+                message = ['treant', router.graph]
             else:
                 message = ['warning', 'Log into game to track your route']
 

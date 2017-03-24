@@ -144,3 +144,7 @@ class Router(object):
             converted = self._treantify(sys, child)
             result['children'].append(converted)
         return result
+
+    @property
+    def graph(self):
+        return [{'source': s, 'target': t, 'type': 'suit'} for s, t in self.connections]

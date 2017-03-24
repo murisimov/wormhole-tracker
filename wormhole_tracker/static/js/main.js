@@ -45,7 +45,7 @@ $(document).ready(function() {
 
             if (type === 'treant') {
                 warning();
-
+                /*
                 //$('#tree-simple').height($(window).height());
                 var chart_config = {
                     chart: {
@@ -54,6 +54,9 @@ $(document).ready(function() {
                     nodeStructure: data,
                 }
                 var chart = new Treant(chart_config, function() {}, $);
+                */
+                console.log(data);
+                build_map(data);
             }
             else if (type === 'warning') {
                 warning(data);
