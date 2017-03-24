@@ -43,7 +43,7 @@ $(document).ready(function() {
             var type = message[0],
                 data = message[1];
 
-            if (type === 'treant') {
+            if (type === 'graph') {
                 warning();
                 /*
                 //$('#tree-simple').height($(window).height());

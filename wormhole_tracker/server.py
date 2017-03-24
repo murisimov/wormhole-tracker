@@ -293,11 +293,11 @@ class PollingHandler(BaseSocketHandler):
             location = yield self.character(self.user_id, '/location/', 'GET')
 
             if location:
-                readable_map = router.build_map(
+                graph_data = router.graph(
                     location['solarSystem']['name']
                 )
-                #message = ['treant', readable_map]
-                message = ['treant', router.graph]
+                if graph_data:
+                    message = ['graph', graph_data]
             else:
                 message = ['warning', 'Log into game to track your route']
 

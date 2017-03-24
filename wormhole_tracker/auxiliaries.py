@@ -29,6 +29,7 @@ class Router(object):
         self.previous = ""
         self.tree = {}
         self.connections = []
+        self.systems = []
 
     def _bind(self, current):
         """
@@ -43,6 +44,7 @@ class Router(object):
         if (self.previous, current) not in self.connections:
             if (current, self.previous) not in self.connections:
                 self.connections.append((self.previous, current))
+                return self.connections
 
     def _track(self, location, systems):
         """
@@ -108,8 +110,9 @@ class Router(object):
         elif self._track(current, self.tree):
             # We have already been here, tree does not need an update.
             # But just in case we should update interconnections!
-            self._bind(current)
+
             self.previous = current
+            return self._bind(current)
 
         elif self._track(self.previous, self.tree):
             # We have not been here yet, let's extend the map tree.
@@ -119,14 +122,14 @@ class Router(object):
                 path = path[system]
             else:
                 path[current] = {}
-                self._bind(current)
                 self.previous = current
+                return self._bind(current)
         else:
             # This is a new route!
             self.tree[current] = {}
             self.previous = current
 
-        return self._treantify('--------', self.tree)
+        #return self._treantify('--------', self.tree)
 
     def _treantify(self, sysname, sysobject):
         """
@@ -145,6 +148,13 @@ class Router(object):
             result['children'].append(converted)
         return result
 
-    @property
-    def graph(self):
-        return [{'source': s, 'target': t, 'type': 'suit'} for s, t in self.connections]
+    def graph(self, current):
+        success = self.build_map(current)
+        if success:
+            result = {}
+            result['links'] =  [
+                {'source': {'name': s}, 'target': {'name': t}}
+                for s, t in self.connections
+            ]
+            result['nodes'] = [{'name': n} for n in self.systems]
+            return result

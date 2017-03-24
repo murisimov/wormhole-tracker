@@ -1,81 +1,77 @@
 
 
+
+
 var width = 960,
     height = 500;
 
-var svg = d3.select("#tree-simple").append("svg")
+var color = d3.scale.category20();
+
+var force = d3.layout.force()
+    .charge(-120)
+    .linkDistance(30)
+    .size([width, height]);
+
+var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-// Per-type markers, as they don't inherit styles.
-svg.append("defs").selectAll("marker")
-    .data(["suit", "licensing", "resolved"])
-  .enter().append("marker")
-    .attr("id", function(d) { return d; })
-    .attr("viewBox", "0 -5 10 10")
-    .attr("refX", 15)
-    .attr("refY", -1.5)
-    .attr("markerWidth", 6)
-    .attr("markerHeight", 6)
-    .attr("orient", "auto")
-  .append("path")
-    .attr("d", "M0,-5L10,0L0,5");
+draw(data);
 
-function build_map(links) {
-    svg.selectAll("*").remove();
+var link, node;
+function draw(graph) {
+    force.nodes(d3.values(graph.nodes))
+         .links(graph.links)
+         .start();
+    link = svg.selectAll(".link")
+        .data(graph.links)
+      .enter().append("line")
+        .attr("class", "link")
+        .style("stroke-width", function(d) { return Math.sqrt(d.value); });
 
-    var nodes = {};
+    var drag = force.drag()
+        .on("dragstart", dragstart);
 
-    // Compute the distinct nodes from the links.
-    links.forEach(function(link) {
-        link.source = nodes[link.source] || (nodes[link.source] = {name: link.source});
-        link.target = nodes[link.target] || (nodes[link.target] = {name: link.target});
-    });
-
-    var force = d3.layout.force()
-        .nodes(d3.values(nodes))
-        .links(links)
-        .size([width, height])
-        .linkDistance(60)
-        .charge(-300)
-        .on("tick", tick)
-        .start();
-
-    var path = svg.append("g").selectAll("path")
-        .data(force.links())
-      .enter().append("path")
-        .attr("class", function(d) { return "link " + d.type; })
-        .attr("marker-end", function(d) { return "url(#" + d.type + ")"; });
-
-    var circle = svg.append("g").selectAll("circle")
-        .data(force.nodes())
+    node = svg.selectAll(".node")
+        .data(d3.values(graph.nodes))
       .enter().append("circle")
-        .attr("r", 6)
-        .call(force.drag);
+        .attr("class", "node")
+        .attr("r", 5)
+        .style("fill", function(d) { return color(0); })
+        .call(drag);
 
-    var text = svg.append("g").selectAll("text")
-        .data(force.nodes())
-      .enter().append("text")
-        .attr("x", 8)
-        .attr("y", ".31em")
+    node.append("title")
         .text(function(d) { return d.name; });
 
-    // Use elliptical arc path segments to doubly-encode directionality.
-    function tick() {
-        path.attr("d", linkArc);
-        circle.attr("transform", transform);
-        text.attr("transform", transform);
-    }
+    force.on("tick", function() {
+        link.attr("x1", function(d) { return d.source.x; })
+            .attr("y1", function(d) { return d.source.y; })
+            .attr("x2", function(d) { return d.target.x; })
+            .attr("y2", function(d) { return d.target.y; });
 
-    function linkArc(d) {
-        var dx = d.target.x - d.source.x,
-            dy = d.target.y - d.source.y,
-            dr = Math.sqrt(dx * dx + dy * dy);
-        return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0,1 " + d.target.x + "," + d.target.y;
-    }
+        node.attr("cx", function(d) { return d.x; })
+            .attr("cy", function(d) { return d.y; });
+    });
 
-    function transform(d) {
-        return "translate(" + d.x + "," + d.y + ")";
+    function dragstart(d) {
+        d.x = d3.event.x;
+        d.y = d3.event.y;
+        d3.select(this).classed("fixed", d.fixed = true);
     }
 }
-
+var savedGraph = { nodes: {}, links: [] };
+d3.select("#saveBtn").on('click',function() {
+    savedGraph.nodes = node.data();
+    savedGraph.links = link.data();
+    svg.selectAll("*").remove();
+});
+d3.select("#loadBtn").on('click',function(){
+    console.log(savedGraph);
+    draw(savedGraph);
+});
+d3.select("#addBtn").on('click',function(){
+    savedGraph.nodes['Dodixie'] = {name: 'Dodixie', fixed: 2};
+    //savedGraph.links.push({})
+    svg.selectAll("*").remove();
+    draw(savedGraph);
+});
