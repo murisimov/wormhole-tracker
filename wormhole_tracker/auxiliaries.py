@@ -27,7 +27,7 @@ class Router(object):
     """
     def __init__(self):
         self.previous = ""
-        self.tree = {}
+        #self.tree = {}
         self.connections = []
         self.systems = []
 
@@ -131,6 +131,23 @@ class Router(object):
 
         #return self._treantify('--------', self.tree)
 
+    def update_map(self, current):
+        if self.previous != current:
+            result = {'current': current}
+            if current not in self.systems:
+                self.systems.append(current)
+                result['node'] = {'name': current}
+
+            if self.previous and (self.previous, current) not in self.connections:
+                if (current, self.previous) not in self.connections:
+                    self.connections.append((self.previous, current))
+                    result['link'] = {
+                        'source': self.previous,
+                        'target': current
+                    }
+            self.previous = current
+            return result
+
     def _treantify(self, sysname, sysobject):
         """
         AUXILIARY
@@ -151,10 +168,11 @@ class Router(object):
     def graph(self, current):
         success = self.build_map(current)
         if success:
-            result = {}
-            result['links'] =  [
+            result = {
+                'links':  [
                 {'source': {'name': s}, 'target': {'name': t}}
-                for s, t in self.connections
-            ]
-            result['nodes'] = [{'name': n} for n in self.systems]
+                    for s, t in self.connections
+                ],
+                'nodes': [{'name': n} for n in self.systems]
+            }
             return result

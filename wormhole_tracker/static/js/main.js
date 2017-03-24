@@ -56,7 +56,9 @@ $(document).ready(function() {
                 var chart = new Treant(chart_config, function() {}, $);
                 */
                 console.log(data);
-                build_map(data);
+                reDraw(data);
+                //draw(data);
+
             }
             else if (type === 'warning') {
                 warning(data);
