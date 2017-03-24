@@ -40,9 +40,9 @@ class Router(object):
             Checks if there are no such pair already in
             self.connections, appends new pair if so.
         """
-        if ( (self.previous, current) not in self.connections
-          and (current, self.previous) not in self.connections ):
-            self.connections.append( (self.previous, current) )
+        if (self.previous, current) not in self.connections:
+            if (current, self.previous) not in self.connections:
+                self.connections.append((self.previous, current))
 
     def _track(self, location, systems):
         """
@@ -55,20 +55,37 @@ class Router(object):
             to update our map.
         Process:
             DANGER: RECURSIVE (:D)
-            Once the location is reached("else" block), it returns initial
-            list with location itself. This, in turn, triggers chain return,
-            and on each return previous system name inserts before the next.
+
+            The function iterates over given map tree (systems),
+            digging further with each subsequent call to itself.
+
+            Once the location is reached("else" block), it returns the list
+            with the location itself. This, in turn, triggers chain return,
+            and, on each subsequent return, previous system name inserts
+            before the next. For instance, if we've followed given path:
+
+            Jita -> Niyabainen -> Tunttaras -> Nourvukaiken
+
+            ...we will have following array as a result:
+
+            ['Jita', 'Niyabainen', 'Tunttaras', 'Nourvukaiken']
         """
+        # systems = that's the map-tree
         if location not in systems:
-            # Means that destination isn't reached yet.
+            # Means we haven't reached destination yet.
             # Let us try to find it further.
             for name, inner_systems in systems.items():
                 chain = self._track(location, inner_systems)
                 if chain:
+                    # That means we have found our destination
+                    # somewhere deeper, and now we insert current
+                    # system right before the others and are passing
+                    # it backward, to previous recursion level
                     chain.insert(0, name)
                     return chain
         else:
-            # Seems like this is the end of the way
+            # Seems like this is the end of the way.
+            # Time to start chain return!
             return [location]
 
     def build_map(self, current):
@@ -78,7 +95,7 @@ class Router(object):
         Purpose:
             To build the map tree depending on previous and current locations.
         Process:
-            Check location state within control flow.
+            Check location state within the control flow.
             - Do nothing if we are in the same place;
             - Only change location state if system is already in the map tree;
             - Update the map tree and change location state if system is new;
@@ -116,7 +133,7 @@ class Router(object):
         AUXILIARY
         ---------
         Purpose:
-            To rebuild the route to data structure that Treant.js can handle
+            To rebuild the map tree to the data structure that Treant.js can handle
         """
         result = {
             'text': {'name': sysname},

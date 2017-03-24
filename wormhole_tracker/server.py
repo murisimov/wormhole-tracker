@@ -202,7 +202,7 @@ class SigninHandler(BaseHandler):
         login_eveonline = "https://login.eveonline.com/oauth/authorize/?"
         query = urlencode({
             'response_type': 'code',
-            'redirect_uri': 'http://%s:%s/auth/' % (options.redirect_uri, options.port),
+            'redirect_uri': '%s/auth/' % options.redirect_uri,
             'client_id': self.client_id,
             'scope': 'characterBookmarksRead characterLocationRead',
             #'scope': 'characterLocationRead',
@@ -341,14 +341,19 @@ def main():
 
 Please create configuration file /etc/wormhole-tracker.conf and fill it as follows:
 
-    client_id = "your_eve_app_id"
-    client_key = "your_eve_app_key"
-    redirect_uri = "IP_address_of_this_server"
+    client_id    = "your_eve_app_id"
+    client_key   = "your_eve_app_key"
+    redirect_uri = "http://your-domain-or-ip.com"
 
+For example:
+
+    client_id    = "334jjnn32i23yv23592352352sa3n52b"
+    client_key   = "3534ui32b5223yu5u2v35v23v523v3fg"
+    redirect_uri = "http://my-awesome-eve-app.com" # the "http(s)://" IS required!
 
 Or provide this data as command line arguments as follows:
 
-    wormhole-tracker --client_id="your_eve_app_id" --client_key="your_eve_app_key" --redirect_uri="IP_address_of_this_server"
+    wormhole-tracker --client_id="eve_app_id" --client_key="eve_app_key" --redirect_uri="https://domain-or-ip.com"
 
         """
         logging.error(error)
