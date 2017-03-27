@@ -1,13 +1,40 @@
+/* This file is part of wormhole-tracker package released under
+   the GNU GPLv3 license. See the LICENSE file for more information. */
+
+
 body {
     background: url("/static/images/backgrounds/caldari.jpg");
 }
 
+/* D3.js style */
 
-
-/* Tree style */
-#tree-simple {
-    width: 100%;
-    height: 100%;
-    margin: 0 auto;
-    color: white;
+.link {
+  fill: none;
+  stroke: #666;
+  stroke-width: 1.5px;
 }
+
+#licensing {
+  fill: green;
+}
+
+.link.licensing {
+  stroke: green;
+}
+
+.link.resolved {
+  stroke-dasharray: 0,2 1;
+}
+
+circle {
+  fill: #ccc;
+  stroke: #333;
+  stroke-width: 1.5px;
+}
+
+.text {
+  font: 10px sans-serif;
+  pointer-events: none;
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+}
+

@@ -1,3 +1,18 @@
+#!/bin/sh
+#
+# This file is part of wormhole-tracker package released under
+# the GNU GPLv3 license. See the LICENSE file for more information.
+
+### BEGIN INIT INFO
+# Provides:          wormhole-tracker
+# Required-Start:    $local_fs $network $named $time $syslog
+# Required-Stop:     $local_fs $network $named $time $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Description:       wormhole-tracker daemon
+### END INIT INFO
+
+
 if [ -z "$(ls . | grep 'deploy.sh')" -o -z "$(ls . | grep 'setup.py')" ]; then
     echo; echo 'Please launch deploy script right from application root directory'; echo
     exit 1

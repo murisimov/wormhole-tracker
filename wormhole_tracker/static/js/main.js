@@ -1,3 +1,7 @@
+// This file is part of wormhole-tracker package released under
+// the GNU GPLv3 license. See the LICENSE file for more information.
+
+
 function track() {
     $('#status').html('Tracking enabled');
     $('#status').removeClass('btn-warning');
@@ -43,17 +47,11 @@ $(document).ready(function() {
             var type = message[0],
                 data = message[1];
 
-            if (type === 'treant') {
+            if (type === 'graph') {
                 warning();
+                //console.log(data);
+                reDraw(data);
 
-                //$('#tree-simple').height($(window).height());
-                var chart_config = {
-                    chart: {
-                        container: "#tree-simple"
-                    },
-                    nodeStructure: data,
-                }
-                var chart = new Treant(chart_config, function() {}, $);
             }
             else if (type === 'warning') {
                 warning(data);

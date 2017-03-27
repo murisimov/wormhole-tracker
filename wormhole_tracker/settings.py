@@ -1,3 +1,9 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+#
+# This file is part of wormhole-tracker package released under
+# the GNU GPLv3 license. See the LICENSE file for more information.
+
 from os import urandom
 from pkg_resources import resource_filename
 

@@ -1,3 +1,9 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+#
+# This file is part of wormhole-tracker package released under
+# the GNU GPLv3 license. See the LICENSE file for more information.
+
 import logging
 import shelve
 import urllib2
@@ -30,11 +36,20 @@ http_client = AsyncHTTPClient()
 
 class App(Application):
     def __init__(self, client_id, client_key):
+        """
+        Instantiate application object
+        
+        :arg client_id:   EVE app Client ID
+        :arg client_key:  EVE app Secret Key
+        Both application id and secret key, which can
+        be obtained at https://developers.eveonline.com
+        """
+        # TODO: move routes to the separate file
         routes = [
+            (r"/", MainHandler),
             (r"/sign", SignHandler),
             (r"/signin", SigninHandler),
             (r"/auth/(.*)", AuthHandler),
-            (r"/", MainHandler),
             (r"/signout", SignoutHandler),
             (r"/poll", PollingHandler),
         ]
@@ -46,13 +61,15 @@ class App(Application):
     @coroutine
     def authorize(self, code, refresh=False):
         """
-        Purpose
-            Authorization and user data update
-        Process
-            1. Get access token
-            2. Verify access token and get character info
-            3. Set or update character database data
-            4. Return user id in case of success
+        User authorization and user information update
+        
+        :arg code:   either user's 'authorization_code' or 'refresh_token'
+        :arg refresh:     do we need to use the `code` as a refresh_token?
+        
+        1. Get access token with the  `code`
+        2. Verify the access token and get character info
+        3. Set or update character database data
+        4. :return user id in case of success
         """
 
         ''' 1 '''
@@ -102,6 +119,7 @@ class App(Application):
                 charinfo = json_decode(response.body)
                 user_id = str(charinfo['CharacterID'])
                 try:
+                    # Use writeback=True to actually save changes on db close
                     db = shelve.open(self.settings['db_path'], writeback=True)
                     ''' 3 '''
                     if not db['users'].get(user_id):
@@ -136,7 +154,7 @@ class App(Application):
             url,
             headers=headers,
             method=method,
-            allow_nonstandard_methods=True if method != 'GET' else False
+            allow_nonstandard_methods=(method != 'GET')
         )
         logging.debug('Fetching character related data')
         try:
@@ -153,10 +171,10 @@ class App(Application):
             except HTTPError as e:
                 logging.error(e)
             else:
-                raise Return( json_decode(response.body) )
+                raise Return(json_decode(response.body))
         else:
             logging.debug(response)
-            raise Return( json_decode(response.body) )
+            raise Return(json_decode(response.body))
 
 
 class BaseHandler(RequestHandler):
@@ -195,7 +213,7 @@ class SigninHandler(BaseHandler):
     @coroutine
     def get(self):
         """
-        Triggers when user pushes "LOG IN with EVE Online" button in sign.html;
+        Triggers when user pushes "LOG IN with EVE Online" button at /sign;
         Redirects user to app's authorization page at EVE Online site;
         After providing credentials there, user being redirected to our /auth.
         """
@@ -207,6 +225,7 @@ class SigninHandler(BaseHandler):
             'scope': 'characterBookmarksRead characterLocationRead',
             #'scope': 'characterLocationRead',
             #'state': str(oid())
+            # TODO: create code:state storage
             'state': urandom(24),
         })
         login_eveonline += query
@@ -293,10 +312,9 @@ class PollingHandler(BaseSocketHandler):
             location = yield self.character(self.user_id, '/location/', 'GET')
 
             if location:
-                readable_map = router.build_map(
-                    location['solarSystem']['name']
-                )
-                message = ['treant', readable_map]
+                graph_data = router.update_map(location['solarSystem']['name'])
+                #logging.warning(graph_data)
+                message = ['graph', graph_data or {}]
             else:
                 message = ['warning', 'Log into game to track your route']
 
