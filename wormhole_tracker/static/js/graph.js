@@ -1,3 +1,7 @@
+// This file is part of wormhole-tracker package released under
+// the GNU GPLv3 license. See the LICENSE file for more information.
+
+
 var width = 960,
     height = 500;
 

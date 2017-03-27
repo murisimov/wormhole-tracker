@@ -1,4 +1,8 @@
 #!/bin/sh
+#
+# This file is part of wormhole-tracker package released under
+# the GNU GPLv3 license. See the LICENSE file for more information.
+
 ### BEGIN INIT INFO
 # Provides:          wormhole-tracker
 # Required-Start:    $local_fs $network $named $time $syslog
