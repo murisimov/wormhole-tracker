@@ -19,9 +19,12 @@ def token_gen():
 
 def authenticated(func):
     """
+    Wrap Tornado RequestHandler methods
+    to provide simple authentication
     
-    :arg func:  
-    :return: 
+    :arg func: tornado request handler method
+    :return: wrapped handler that redirects
+    unauthenticated users to the login page
     """
     @wraps(func)
     def wrapper(handler, *args, **kwargs):
@@ -32,6 +35,12 @@ def authenticated(func):
 
 
 def get_user(user_id):
+    """
+    Retrieve user by id
+    
+    :param user_id: user id
+    :return: user object
+    """
     db = shelve.open(settings['db_path'], writeback=True)
     user = db['users'].get(user_id)
     db.close()
