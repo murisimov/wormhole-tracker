@@ -7,8 +7,14 @@
 import logging
 import shelve
 from functools import wraps
+from os import urandom
 
 from settings import settings
+
+
+def token_gen():
+    b64encoded = urandom(24).encode('base-64')
+    return unicode(b64encoded.strip(), 'utf-8')
 
 
 def authenticated(func):
