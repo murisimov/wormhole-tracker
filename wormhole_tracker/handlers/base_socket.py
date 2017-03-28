@@ -1,4 +1,4 @@
-#!#!/usr/bin/env python2
+#!#!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 #
 # This file is part of wormhole-tracker package released under
@@ -29,12 +29,18 @@ class BaseSocketHandler(WebSocketHandler):
         return self.application.state_storage
 
     @property
+    def crud(self):
+        return self.application.crud
+
+    @property
     def user_id(self):
         return self.get_secure_cookie("auth_cookie")
 
     @property
+    @coroutine
     def user(self):
-       return self.application.get_user(self.user_id)
+        user = yield self.application.get_user(self.user_id)
+        raise Return(user)
 
     @property
     def authorize(self):

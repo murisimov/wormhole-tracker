@@ -16,8 +16,8 @@ var svg = d3.select("#path").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-var currentSystem;
-var starSystems = { nodes: [], links: [] };
+var current_system;
+var star_systems = { nodes: [], links: [] };
 var link, node;
 
 function draw(graph) {
@@ -49,16 +49,14 @@ function draw(graph) {
         .attr("dy", ".35em")
         .text(function(d) { return d.name; });
 
-
     force.on("tick", function() {
         link.attr("x1", function(d) { return d.source.x; })
             .attr("y1", function(d) { return d.source.y; })
             .attr("x2", function(d) { return d.target.x; })
             .attr("y2", function(d) { return d.target.y; });
-
-        //node.attr("cx", function(d) { return d.x; })
-        //    .attr("cy", function(d) { return d.y; });
-        node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+        node.attr("transform", function(d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        });
     });
 
     function dragstart(d) {
@@ -68,26 +66,26 @@ function draw(graph) {
     }
 }
 
-draw(starSystems); // Initial graph drawing
+draw(star_systems); // Initial graph drawing
 
-function clearSvg() {
+function clear_svg() {
     svg.selectAll("*").remove();
 }
 
-function clearPath() {
-    starSystems.nodes = [];
-    starSystems.links = [];
+function clear_path() {
+    star_systems.nodes = [];
+    star_systems.links = [];
 }
 
-function trackReset() {
-    clearSvg();
-    clearPath();
+function track_reset() {
+    clear_svg();
+    clear_path();
     console.warn("Tracking reset");
 }
 
-function bindLink(l) {
-    for (var i in starSystems.nodes) {
-        var n = starSystems.nodes[i];
+function bind_link(l) {
+    for (var i in star_systems.nodes) {
+        var n = star_systems.nodes[i];
         if (l.source == n.name) {
             l.source = n;
         }
@@ -97,24 +95,24 @@ function bindLink(l) {
     }
 }
 
-function saveGraph() {
-    starSystems.nodes = node.data();
-    starSystems.links = link.data();
+function save_graph() {
+    star_systems.nodes = node.data();
+    star_systems.links = link.data();
 }
 
-function reDraw(data) {
+function redraw(data) {
     // Redraw only if we got at least something
     if (data.node || data.link) {
         if (data.node) {
-            starSystems.nodes.push(data.node);
+            star_systems.nodes.push(data.node);
         }
         if (data.link) {
-            bindLink(data.link);
-            starSystems.links.push(data.link);
+            bind_link(data.link);
+            star_systems.links.push(data.link);
         }
-        clearSvg();
-        draw(starSystems);
-        saveGraph();
+        clear_svg();
+        draw(star_systems);
+        save_graph();
     }
 }
 

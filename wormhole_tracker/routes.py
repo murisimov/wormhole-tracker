@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 #
 # This file is part of wormhole-tracker package released under

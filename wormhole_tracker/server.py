@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 #
 # This file is part of wormhole-tracker package released under
@@ -10,6 +10,7 @@ import urllib2
 
 from base64 import b64encode
 from datetime import datetime
+from multiprocessing import cpu_count
 from os import sys
 from os.path import dirname, join
 from time import time
@@ -23,7 +24,7 @@ from tornado.httpserver import HTTPServer
 from tornado.options import define, options, parse_command_line, parse_config_file
 from tornado.web import Application
 
-from wormhole_tracker.auxiliaries import Router
+from wormhole_tracker.auxiliaries import Router, ManageShelve
 from wormhole_tracker.routes import routes
 from wormhole_tracker.settings import settings
 
@@ -40,8 +41,8 @@ class App(Application):
         """
         Instantiate application object
         
-        :arg client_id:   EVE app Client ID
-        :arg client_key:  EVE app Secret Key
+        :argumentument client_id:   EVE app Client ID
+        :argumentument client_key:  EVE app Secret Key
         Both application id and secret key, which can
         be obtained at https://developers.eveonline.com
         """
@@ -50,14 +51,15 @@ class App(Application):
         self.client_key = client_key
         self.vagrants = []
         self.state_storage = {}
+        self.crud = ManageShelve()
 
     @coroutine
     def authorize(self, code, refresh=False):
         """
         Authorize user via API and get/refresh credentials data
         
-        :arg code:   either user's 'authorization_code' or 'refresh_token'
-        :arg refresh:     do we need to use the `code` as a refresh_token?
+        :argument code:   either user's 'authorization_code' or 'refresh_token'
+        :argument refresh:     do we need to use the `code` as a refresh_token?
         
         1. Get access token with the  `code`
         2. Verify the access token and get character info
@@ -112,21 +114,16 @@ class App(Application):
                 charinfo = json_decode(response.body)
                 user_id = str(charinfo['CharacterID'])
                 try:
-                    # Use writeback=True to actually save changes on db close
-                    db = shelve.open(self.settings['db_path'], writeback=True)
+                    user = yield self.crud.get_user(user_id)
                     ''' 3 '''
-                    if not db['users'].get(user_id):
-                        db['users'][user_id] = charinfo
-                        db['users'][user_id]['router'] = Router(user_id, self)
+                    if not user:
+                        user = charinfo
+                        user['router'] = Router(user_id, self)
 
-                    db['users'][user_id].update({
-                        'access_token':  tokens['access_token'],
-                        'refresh_token': tokens['refresh_token'],
-                    })
+                    user['access_token']  = tokens['access_token']
+                    user['refresh_token'] = tokens['refresh_token']
 
-                    logging.info(db['users'][user_id])
-
-                    db.close()
+                    yield self.crud.update_user(user_id, user)
                 except Exception as e:
                     logging.error(e)
                 else:
@@ -139,12 +136,12 @@ class App(Application):
         Fetch specific character info, re-authorize
         via API if access token became obsolete.
         
-        :arg user_id: user id
-        :arg uri:     uri to fetch (/location/ in our case)
-        :arg method:  HTTP method
+        :argument user_id: user id
+        :argument uri:     uri to fetch (/location/ in our case)
+        :argument method:  HTTP method
         :return:      fetched data (dict with location info)
         """
-        user = self.get_user(user_id)
+        user = yield self.crud.get_user(user_id)
         url = (
             "https://crest-tq.eveonline.com/characters/" +
             str(user['CharacterID']) + uri
@@ -166,7 +163,7 @@ class App(Application):
             # Authorize again with refresh_token
             yield self.authorize(user['refresh_token'], refresh=True)
             # And then refresh user object
-            user = self.get_user(user_id)
+            user = yield self.crud.get_user(user_id)
             headers['Authorization'] = 'Bearer ' + user['access_token']
             try:
                 response = yield http_client.fetch(request)
@@ -177,32 +174,6 @@ class App(Application):
         else:
             logging.debug(response)
             raise Return(json_decode(response.body))
-
-    def get_user(self, user_id):
-        """
-        Retrieve user
-    
-        :arg user_id: user id
-        :return: user object
-        """
-        db = shelve.open(settings['db_path'])#, writeback=True)
-        user = db['users'].get(user_id)
-        db.close()
-        return user or {}
-
-    def update_user(self, user_id, data):
-        """
-        Update user object
-    
-        :arg user_id: user id
-        :arg data: dict with data to update
-        :return updated user object
-        """
-        db = shelve.open(settings['db_path'], writeback=True)
-        db['users'][user_id].update(data)
-        user = db['users'].get(user_id)
-        db.close()
-        return user or {}
 
 
 def main():

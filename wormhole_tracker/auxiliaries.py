@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 #
 # This file is part of wormhole-tracker package released under
@@ -7,7 +7,11 @@
 import logging
 import shelve
 from functools import wraps
+from multiprocessing import cpu_count
 from os import urandom
+
+from tornado.concurrent import futures, run_on_executor
+from tornado.gen import coroutine, Return
 
 from settings import settings
 
@@ -22,7 +26,7 @@ def authenticated(func):
     Wrap Tornado RequestHandler methods
     to provide simple authentication
     
-    :arg func: tornado request handler method
+    :argument func: tornado request handler method
     :return: wrapped handler that redirects
     unauthenticated users to the login page
     """
@@ -46,28 +50,26 @@ class Router(object):
         self.previous = ""      # Player's location fetched on the last API call
         self.connections = []   # List with tuples of all star system interconnections
         self.systems = []       # List with all visited systems
+        self.recovery = {       # Storage for front-end data, required for recovery
+            'nodes': [], 'links': []
+        }
 
-    def _update(self):
+    @coroutine
+    def _save(self):
         """
         Save self to the user's object
         """
-        self.application.update_user(self.user_id, {'router': self})
+        yield self.application.crud.update_user(
+            self.user_id, {'router': self}
+        )
 
-    def reset(self):
-        """
-        Reset routing info
-        """
-        self.previous = ""
-        self.connections = []
-        self.systems = []
-        self._update()
-
-    def update_map(self, current):
+    @coroutine
+    def update(self, current):
         """
         Check current location, update internal state if it
         is changed, return data for front-end graph drawing.
         
-        :arg     current: users's current in-game location
+        :argument     current: users's current in-game location
         :return: dict with `current` location, node and link info for D3.js
 
         """
@@ -86,8 +88,64 @@ class Router(object):
                     }
             self.previous = current
             # Since router object has changed we need to update user data
-            self._update()
-            return result
+            yield self._save()
+            raise Return(result)
 
-    def recover_map(self):
-        pass
+    @coroutine
+    def backup(self, data):
+        self.recovery = data
+        yield self._save()
+
+    @coroutine
+    def reset(self):
+        """
+        Reset routing info
+        """
+        self.previous = ""
+        self.connections = []
+        self.systems = []
+        yield self._save()
+
+
+class ManageShelve(object):
+    def __init__(self):
+        self.executor = futures.ThreadPoolExecutor(
+            max_workers=cpu_count()
+        )
+
+    @coroutine
+    def get_user(self, user_id):
+        """
+        Retrieve user
+
+        :argument user_id: user id
+        :return: user object
+        """
+        db = shelve.open(
+            settings['db_path']
+        )
+        user = db['users'].get(user_id)
+        db.close()
+        raise Return(user or {})
+
+    @coroutine
+    def update_user(self, user_id, data):
+        """
+        Update user object
+
+        :argument user_id: user id
+        :argument data: dict with data to update
+        :return updated user object
+        """
+        # Use writeback=True to actually
+        # save changes on db close
+        db = shelve.open(
+            settings['db_path'],
+            writeback=True
+        )
+        if not db['users'].get(user_id):
+            db['users'][user_id] = {}
+        db['users'][user_id].update(data)
+        user = db['users'].get(user_id)
+        db.close()
+        raise Return(user or {})
