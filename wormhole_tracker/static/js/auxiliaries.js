@@ -4,7 +4,7 @@
 
 /* Type stuff */
 
-function typeOf(value) {
+function type_of(value) {
     var s = typeof value;
     if (s === 'object') {
         if (value) {

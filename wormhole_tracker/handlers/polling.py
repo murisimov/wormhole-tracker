@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3.6
 # -*- coding: utf-8 -*-
 #
 # This file is part of wormhole-tracker package released under
@@ -38,9 +38,12 @@ class PollingHandler(BaseSocketHandler):
         location = yield self.character(self.user_id, '/location/', 'GET')
 
         if location:
-            graph_data = self.user['router'].update_map(location['solarSystem']['name'])
+            user = yield self.user
+            graph_data = yield user['router'].update(
+                location['solarSystem']['name']
+            )
             if graph_data:
-                message = ['graph', graph_data]
+                message = ['update', graph_data]
                 logging.warning(graph_data)
                 yield self.safe_write(message)
         else:
@@ -55,6 +58,9 @@ class PollingHandler(BaseSocketHandler):
         if self.user_id:
             self.vagrants.append(self)
             logging.info("Connection received from " + self.request.remote_ip)
+
+            user = yield self.user
+            yield self.safe_write(['recover', user['router'].recovery])
         else:
             self.close()
 
@@ -63,10 +69,12 @@ class PollingHandler(BaseSocketHandler):
         """
         Triggers on receiving front-end message
         
-        :arg message: front-end message
+        :argument message: front-end message
         
         Receive user commands here
         """
+        user = yield self.user
+
         logging.info(message)
         message = json_decode(message)
         if message == 'track':
@@ -78,7 +86,10 @@ class PollingHandler(BaseSocketHandler):
             if self.tracker.is_running():
                 self.tracker.stop()
             if message == 'reset':
-                self.user['router'].reset()
+                yield user['router'].reset()
+
+        elif message[0] == 'backup':
+            yield user['router'].backup(message[1])
 
     @coroutine
     def on_close(self):
