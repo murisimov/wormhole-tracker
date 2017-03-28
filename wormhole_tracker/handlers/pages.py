@@ -9,7 +9,7 @@ import logging
 from tornado.gen import coroutine
 
 from wormhole_tracker.handlers.base_request import BaseHandler
-from wormhole_tracker.auxiliaries import authenticated, get_user
+from wormhole_tracker.auxiliaries import authenticated
 
 
 class SignHandler(BaseHandler):
@@ -24,7 +24,7 @@ class MainHandler(BaseHandler):
     def get(self, *args, **kwargs):
         kwargs = {
             'hostname': self.request.host,
-            'user': get_user(self.user_id)
+            'user': self.user
         }
         self.render("main.html", **kwargs)
 

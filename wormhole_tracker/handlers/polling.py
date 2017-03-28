@@ -7,42 +7,52 @@
 import logging
 
 from tornado.escape import json_decode
-from tornado.gen import coroutine, sleep
+from tornado.gen import coroutine
+from tornado.ioloop import PeriodicCallback
 
-from wormhole_tracker.auxiliaries import get_user
 from wormhole_tracker.handlers.base_socket import BaseSocketHandler
 
 
 class PollingHandler(BaseSocketHandler):
+    """
+    This class represents user, connected via websocket.
+    """
     def __init__(self, *args, **kwargs):
+        """
+        Trigger parent's __init__ and register periodic
+        callback which will be used for tracking
+        """
         super(PollingHandler, self).__init__(*args, **kwargs)
-        self.tracking = False
+        # Set Tornado PeriodicCallback with our self.track, we
+        # will use launch it later on track/untrack commands
+        self.tracker = PeriodicCallback(self.track, 5000)
 
     @coroutine
-    def run(self):
-        router = get_user(self.user_id)['router']
-        self.tracking = True
-        while self.tracking:
-            # Make a request to find out current location
-            location = yield self.character(self.user_id, '/location/', 'GET')
+    def track(self):
+        """
+        This is actually the tracking function. When user pushes "track",
+        PeriodicCallback starts and fires once in 5 second, makes an API
+        call and updates changed router. And stops on "untrack" action.
+        """
+        # Call API to find out current character location
+        location = yield self.character(self.user_id, '/location/', 'GET')
 
-            if location:
-                graph_data = router.update_map(location['solarSystem']['name'])
-                #logging.warning(graph_data)
-                message = ['graph', graph_data or {}]
-            else:
-                message = ['warning', 'Log into game to track your route']
+        if location:
+            graph_data = self.user['router'].update_map(location['solarSystem']['name'])
+            if graph_data:
+                message = ['graph', graph_data]
+                logging.warning(graph_data)
+                yield self.safe_write(message)
+        else:
+            message = ['warning', 'Log into game to track your route']
+            yield self.safe_write(message)
 
-            result = yield self.safe_write(message)
-            if result:
-                yield sleep(5)
-            else:
-                # In that case connection is already closed
-                self.tracking = False
-
+    @coroutine
     def open(self):
+        """
+        Triggers on successful websocket connection
+        """
         if self.user_id:
-            self.tracking = False
             self.vagrants.append(self)
             logging.info("Connection received from " + self.request.remote_ip)
         else:
@@ -50,14 +60,32 @@ class PollingHandler(BaseSocketHandler):
 
     @coroutine
     def on_message(self, message):
+        """
+        Triggers on receiving front-end message
+        
+        :arg message: front-end message
+        
+        Receive user commands here
+        """
         logging.info(message)
         message = json_decode(message)
         if message == 'track':
-            if not self.tracking:
-                yield self.run()
-        elif message == 'stop':
-            self.tracking = False
+            # Start the PeriodicCallback
+            if not self.tracker.is_running():
+                self.tracker.start()
 
+        elif message in ['stop', 'reset']:
+            if self.tracker.is_running():
+                self.tracker.stop()
+            if message == 'reset':
+                self.user['router'].reset()
+
+    @coroutine
     def on_close(self):
+        """
+        Triggers on closed websocket connection
+        """
         self.vagrants.remove(self)
+        if self.tracker.is_running():
+            self.tracker.stop()
         logging.info("Connection closed, " + self.request.remote_ip)

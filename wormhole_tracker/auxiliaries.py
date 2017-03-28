@@ -34,29 +34,33 @@ def authenticated(func):
     return wrapper
 
 
-def get_user(user_id):
-    """
-    Retrieve user by id
-    
-    :param user_id: user id
-    :return: user object
-    """
-    db = shelve.open(settings['db_path'], writeback=True)
-    user = db['users'].get(user_id)
-    db.close()
-    return user or {}
-
-
 class Router(object):
     """
     Keeps movement states, such as previous location,
     map tree and system interconnections. Builds and
     updates map tree, updates system interconnections.
     """
-    def __init__(self):
-        self.previous = ""     # Player's location fetched on the last API call
-        self.connections = []  # List with tuples of all star system interconnections
-        self.systems = []      # List with all visited systems
+    def __init__(self, user_id, app):
+        self.user_id = user_id  # User's id, will be used to get user object
+        self.application = app  # Application object
+        self.previous = ""      # Player's location fetched on the last API call
+        self.connections = []   # List with tuples of all star system interconnections
+        self.systems = []       # List with all visited systems
+
+    def _update(self):
+        """
+        Save self to the user's object
+        """
+        self.application.update_user(self.user_id, {'router': self})
+
+    def reset(self):
+        """
+        Reset routing info
+        """
+        self.previous = ""
+        self.connections = []
+        self.systems = []
+        self._update()
 
     def update_map(self, current):
         """
@@ -67,7 +71,6 @@ class Router(object):
         :return: dict with `current` location, node and link info for D3.js
 
         """
-
         if self.previous != current:
             result = {'current': current}
             if current not in self.systems:
@@ -82,4 +85,9 @@ class Router(object):
                         'target': current
                     }
             self.previous = current
+            # Since router object has changed we need to update user data
+            self._update()
             return result
+
+    def recover_map(self):
+        pass

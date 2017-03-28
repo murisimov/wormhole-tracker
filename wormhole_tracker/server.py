@@ -23,7 +23,7 @@ from tornado.httpserver import HTTPServer
 from tornado.options import define, options, parse_command_line, parse_config_file
 from tornado.web import Application
 
-from wormhole_tracker.auxiliaries import get_user, Router
+from wormhole_tracker.auxiliaries import Router
 from wormhole_tracker.routes import routes
 from wormhole_tracker.settings import settings
 
@@ -54,7 +54,7 @@ class App(Application):
     @coroutine
     def authorize(self, code, refresh=False):
         """
-        User authorization and user information update
+        Authorize user via API and get/refresh credentials data
         
         :arg code:   either user's 'authorization_code' or 'refresh_token'
         :arg refresh:     do we need to use the `code` as a refresh_token?
@@ -117,10 +117,10 @@ class App(Application):
                     ''' 3 '''
                     if not db['users'].get(user_id):
                         db['users'][user_id] = charinfo
-                        db['users'][user_id]['router'] = Router()
+                        db['users'][user_id]['router'] = Router(user_id, self)
 
                     db['users'][user_id].update({
-                        'access_token': tokens['access_token'],
+                        'access_token':  tokens['access_token'],
                         'refresh_token': tokens['refresh_token'],
                     })
 
@@ -135,7 +135,16 @@ class App(Application):
 
     @coroutine
     def character(self, user_id, uri, method):
-        user = get_user(user_id)
+        """
+        Fetch specific character info, re-authorize
+        via API if access token became obsolete.
+        
+        :arg user_id: user id
+        :arg uri:     uri to fetch (/location/ in our case)
+        :arg method:  HTTP method
+        :return:      fetched data (dict with location info)
+        """
+        user = self.get_user(user_id)
         url = (
             "https://crest-tq.eveonline.com/characters/" +
             str(user['CharacterID']) + uri
@@ -157,7 +166,7 @@ class App(Application):
             # Authorize again with refresh_token
             yield self.authorize(user['refresh_token'], refresh=True)
             # And then refresh user object
-            user = get_user(user_id)
+            user = self.get_user(user_id)
             headers['Authorization'] = 'Bearer ' + user['access_token']
             try:
                 response = yield http_client.fetch(request)
@@ -168,6 +177,32 @@ class App(Application):
         else:
             logging.debug(response)
             raise Return(json_decode(response.body))
+
+    def get_user(self, user_id):
+        """
+        Retrieve user
+    
+        :arg user_id: user id
+        :return: user object
+        """
+        db = shelve.open(settings['db_path'])#, writeback=True)
+        user = db['users'].get(user_id)
+        db.close()
+        return user or {}
+
+    def update_user(self, user_id, data):
+        """
+        Update user object
+    
+        :arg user_id: user id
+        :arg data: dict with data to update
+        :return updated user object
+        """
+        db = shelve.open(settings['db_path'], writeback=True)
+        db['users'][user_id].update(data)
+        user = db['users'].get(user_id)
+        db.close()
+        return user or {}
 
 
 def main():

@@ -33,6 +33,10 @@ class BaseSocketHandler(WebSocketHandler):
         return self.get_secure_cookie("auth_cookie")
 
     @property
+    def user(self):
+       return self.application.get_user(self.user_id)
+
+    @property
     def authorize(self):
         return self.application.authorize
 

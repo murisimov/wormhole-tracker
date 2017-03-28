@@ -12,7 +12,7 @@ var force = d3.layout.force()
     .linkDistance(30)
     .size([width, height]);
 
-var svg = d3.select("body").append("svg")
+var svg = d3.select("#path").append("svg")
     .attr("width", width)
     .attr("height", height);
 
@@ -21,7 +21,7 @@ var starSystems = { nodes: [], links: [] };
 var link, node;
 
 function draw(graph) {
-    console.warn(graph);
+    console.log(graph);
     force.nodes(graph.nodes)
          .links(graph.links)
          .start();
@@ -42,7 +42,7 @@ function draw(graph) {
 
     node.append("circle")
         .attr("r", 5)
-        .style("fill", function(d) { return color(0); })
+        .style("fill", function(d) { return color(0); });
 
     node.append("text")
         .attr("dx", 12)
@@ -70,6 +70,21 @@ function draw(graph) {
 
 draw(starSystems); // Initial graph drawing
 
+function clearSvg() {
+    svg.selectAll("*").remove();
+}
+
+function clearPath() {
+    starSystems.nodes = [];
+    starSystems.links = [];
+}
+
+function trackReset() {
+    clearSvg();
+    clearPath();
+    console.warn("Tracking reset");
+}
+
 function bindLink(l) {
     for (var i in starSystems.nodes) {
         var n = starSystems.nodes[i];
@@ -88,13 +103,18 @@ function saveGraph() {
 }
 
 function reDraw(data) {
-    saveGraph();
-    if (data.node) starSystems.nodes.push(data.node);
-    if (data.link) {
-        bindLink(data.link);
-        starSystems.links.push(data.link);
+    // Redraw only if we got at least something
+    if (data.node || data.link) {
+        if (data.node) {
+            starSystems.nodes.push(data.node);
+        }
+        if (data.link) {
+            bindLink(data.link);
+            starSystems.links.push(data.link);
+        }
+        clearSvg();
+        draw(starSystems);
+        saveGraph();
     }
-    svg.selectAll("*").remove();
-    draw(starSystems);
 }
 
