@@ -6,25 +6,17 @@
 
 import logging
 import shelve
-import urllib2
-
 from base64 import b64encode
-from datetime import datetime
-from multiprocessing import cpu_count
 from os import sys
-from os.path import dirname, join
-from time import time
-from urllib import urlencode, unquote
 
-from tornado.escape import json_decode, json_encode, url_escape
-from tornado.gen import coroutine, Return, sleep, Task
-from tornado.ioloop import IOLoop
+from tornado.escape import json_decode, json_encode
 from tornado.httpclient import AsyncHTTPClient, HTTPError, HTTPRequest
 from tornado.httpserver import HTTPServer
+from tornado.ioloop import IOLoop
 from tornado.options import define, options, parse_command_line, parse_config_file
 from tornado.web import Application
 
-from wormhole_tracker.auxiliaries import Router, ManageShelve
+from wormhole_tracker.auxiliaries import a, Router
 from wormhole_tracker.routes import routes
 from wormhole_tracker.settings import settings
 
@@ -32,17 +24,18 @@ define('port', 13131, int)
 define('client_id')
 define('client_key')
 define('redirect_uri')
+define('cookie_secret', 'default_secret')
 
 http_client = AsyncHTTPClient()
 
 
 class App(Application):
-    def __init__(self, client_id, client_key):
+    def __init__(self, client_id, client_key, routes, settings):
         """
         Instantiate application object
         
-        :argumentument client_id:   EVE app Client ID
-        :argumentument client_key:  EVE app Secret Key
+        :argument client_id:   EVE app Client ID
+        :argument client_key:  EVE app Secret Key
         Both application id and secret key, which can
         be obtained at https://developers.eveonline.com
         """
@@ -51,10 +44,25 @@ class App(Application):
         self.client_key = client_key
         self.vagrants = []
         self.state_storage = {}
-        self.crud = ManageShelve()
+        self.users = {}  # Temporary users storage
 
-    @coroutine
-    def authorize(self, code, refresh=False):
+    def spawn(self, callback, *args, **kwargs):
+        """
+        Shortcut for spawning callback on IOLoop
+        
+        Since WebSocketHandler main methods do not support
+        async, while we still don't want to block anything,
+        we call IOLoop.spawn_callback for help - once we
+        passed a callback it will be executed on the next
+        IOLoop iteration.
+        
+        :argument callback: callback to call
+        :argument args:     callback arguments
+        :argument kwargs:   key word arguments
+        """
+        IOLoop.current().spawn_callback(callback, *args, **kwargs)
+
+    async def authorize(self, code, refresh=False):
         """
         Authorize user via API and get/refresh credentials data
         
@@ -66,12 +74,12 @@ class App(Application):
         3. Set or update character database data
         4. :return user id in case of success
         """
-
         ''' 1 '''
         authorization = "https://login.eveonline.com/oauth/token"
-        credentials = b64encode(self.client_id + ':' + self.client_key)
+        auth_string = a(f"{self.client_id}:{self.client_key}")
+        credentials = b64encode(auth_string)
         headers = {
-            'Authorization': "Basic " + credentials,
+            'Authorization': a("Basic ") + credentials,
             'Content-Type': 'application/json',
             'Host': "login.eveonline.com"
         }
@@ -92,7 +100,7 @@ class App(Application):
             body=body
         )
         try:
-            response = yield http_client.fetch(request)
+            response = await http_client.fetch(request)
             #logging.warning(response)
             logging.info(response.body)
             tokens = json_decode(response.body)
@@ -107,31 +115,31 @@ class App(Application):
             }
             request = HTTPRequest(verify, headers=headers)
             try:
-                response = yield http_client.fetch(request)
+                response = await http_client.fetch(request)
             except HTTPError as e:
                 logging.error(e)
             else:
                 charinfo = json_decode(response.body)
                 user_id = str(charinfo['CharacterID'])
                 try:
-                    user = yield self.crud.get_user(user_id)
+                    user = self.users.get(user_id)
                     ''' 3 '''
                     if not user:
+                        self.users[user_id] = {}
                         user = charinfo
                         user['router'] = Router(user_id, self)
 
                     user['access_token']  = tokens['access_token']
                     user['refresh_token'] = tokens['refresh_token']
 
-                    yield self.crud.update_user(user_id, user)
+                    self.users[user_id].update(user)
                 except Exception as e:
-                    logging.error(e)
+                    logging.error(f"ERROR OCCURRED: {e}")
                 else:
                     ''' 4 '''
-                    raise Return(user_id)
+                    return user_id
 
-    @coroutine
-    def character(self, user_id, uri, method):
+    async def character(self, user_id, uri, method):
         """
         Fetch specific character info, re-authorize
         via API if access token became obsolete.
@@ -139,9 +147,9 @@ class App(Application):
         :argument user_id: user id
         :argument uri:     uri to fetch (/location/ in our case)
         :argument method:  HTTP method
-        :return:      fetched data (dict with location info)
+        :return:  fetched data (dict with location info)
         """
-        user = yield self.crud.get_user(user_id)
+        user = self.users[user_id]
         url = (
             "https://crest-tq.eveonline.com/characters/" +
             str(user['CharacterID']) + uri
@@ -157,62 +165,67 @@ class App(Application):
         )
         logging.debug('Fetching character related data')
         try:
-            response = yield http_client.fetch(request)
+            response = await http_client.fetch(request)
         except HTTPError as e:
             logging.error(e)
             # Authorize again with refresh_token
-            yield self.authorize(user['refresh_token'], refresh=True)
+            await self.authorize(user['refresh_token'], refresh=True)
             # And then refresh user object
-            user = yield self.crud.get_user(user_id)
+            user = self.users[user_id]
             headers['Authorization'] = 'Bearer ' + user['access_token']
             try:
-                response = yield http_client.fetch(request)
+                response = await http_client.fetch(request)
             except HTTPError as e:
-                logging.error(e)
+                logging.error(f"ERROR OCCURRED: {e}")
             else:
-                raise Return(json_decode(response.body))
+                return json_decode(response.body)
         else:
             logging.debug(response)
-            raise Return(json_decode(response.body))
+            return json_decode(response.body)
 
 
 def main():
     try:
         parse_config_file('/etc/wormhole-tracker.conf')
-    except: # TODO: specify correct exception here
+    except Exception as e:  # TODO: specify correct exception here
+        logging.warning(e)
         parse_command_line()
 
-    if not options.client_id or not options.client_key or not options.redirect_uri:
+    if (not options.client_id
+      or not options.client_key
+      or not options.redirect_uri
+      or not options.cookie_secret):
         error = """
 
 Please create configuration file /etc/wormhole-tracker.conf and fill it as follows:
 
-    client_id    = "your_eve_app_id"
-    client_key   = "your_eve_app_key"
-    redirect_uri = "http://your-domain-or-ip.com"
+    client_id     = "your_eve_app_id"
+    client_key    = "your_eve_app_key"
+    redirect_uri  = "http://your-domain-or-ip.com"
+    cookie_secret = "my_secret_secret"
 
 For example:
 
-    client_id    = "334jjnn32i23yv23592352352sa3n52b"
-    client_key   = "3534ui32b5223yu5u2v35v23v523v3fg"
-    redirect_uri = "http://my-awesome-eve-app.com" # the "http(s)://" IS required!
+    client_id     = "334jjnn32i23yv23592352352sa3n52b"
+    client_key    = "3534ui32b5223yu5u2v35v23v523v3fg"
+    redirect_uri  = "http://my-awesome-eve-app.com" # the "http(s)://" IS required!
+    cookie_secret = "WYkRXG1RJhmpYlYCA2D99EFRz9lt709t"
 
 Or provide this data as command line arguments as follows:
 
-    wormhole-tracker --client_id="eve_app_id" --client_key="eve_app_key" --redirect_uri="https://domain-or-ip.com"
+    wormhole-tracker --client_id="eve_app_id" \\
+                     --client_key="eve_app_key" \\
+                     --redirect_uri="https://domain-or-ip.com" \\
+                     --cookie_secret="my_secret"
 
         """
         logging.error(error)
         sys.exit(1)
 
-    app = App(options.client_id, options.client_key)
+    settings['cookie_secret'] = options.cookie_secret
+    app = App(options.client_id, options.client_key, routes, settings)
     http_server = HTTPServer(app)
     http_server.listen(options.port)
-
-    # Prepare DB
-    db = shelve.open(app.settings['db_path'], writeback=True)
-    db['users'] = {}
-    db.close()
 
     try:
         logging.info("Starting server...")
