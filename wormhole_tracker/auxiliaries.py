@@ -5,20 +5,21 @@
 # the GNU GPLv3 license. See the LICENSE file for more information.
 
 import logging
-import shelve
+from base64 import b64encode
 from functools import wraps
-from multiprocessing import cpu_count
 from os import urandom
 
-from tornado.concurrent import futures, run_on_executor
-from tornado.gen import coroutine, Return
 
-from settings import settings
+def a(string):
+    return string.encode('ascii')
 
 
-def token_gen():
-    b64encoded = urandom(24).encode('base-64')
-    return unicode(b64encoded.strip(), 'utf-8')
+def s(string):
+    return string.decode('utf-8')
+
+
+async def token_gen():
+    return b64encode(urandom(24)).strip()
 
 
 def authenticated(func):
@@ -32,7 +33,8 @@ def authenticated(func):
     """
     @wraps(func)
     def wrapper(handler, *args, **kwargs):
-        if handler.get_secure_cookie("auth_cookie"):
+        cookie = handler.get_secure_cookie("auth_cookie")
+        if cookie:
             return func(handler, *args, **kwargs)
         return handler.redirect('/sign')
     return wrapper
@@ -54,17 +56,16 @@ class Router(object):
             'nodes': [], 'links': []
         }
 
-    @coroutine
-    def _save(self):
+    async def _save(self):
         """
         Save self to the user's object
         """
-        yield self.application.crud.update_user(
-            self.user_id, {'router': self}
+        self.application.users.get(
+            self.user_id, {}).update(
+            {'router': self}
         )
 
-    @coroutine
-    def update(self, current):
+    async def update(self, current):
         """
         Check current location, update internal state if it
         is changed, return data for front-end graph drawing.
@@ -88,64 +89,18 @@ class Router(object):
                     }
             self.previous = current
             # Since router object has changed we need to update user data
-            yield self._save()
-            raise Return(result)
+            await self._save()
+            return result
 
-    @coroutine
-    def backup(self, data):
+    async def backup(self, data):
         self.recovery = data
-        yield self._save()
+        await self._save()
 
-    @coroutine
-    def reset(self):
+    async def reset(self):
         """
         Reset routing info
         """
         self.previous = ""
         self.connections = []
         self.systems = []
-        yield self._save()
-
-
-class ManageShelve(object):
-    def __init__(self):
-        self.executor = futures.ThreadPoolExecutor(
-            max_workers=cpu_count()
-        )
-
-    @coroutine
-    def get_user(self, user_id):
-        """
-        Retrieve user
-
-        :argument user_id: user id
-        :return: user object
-        """
-        db = shelve.open(
-            settings['db_path']
-        )
-        user = db['users'].get(user_id)
-        db.close()
-        raise Return(user or {})
-
-    @coroutine
-    def update_user(self, user_id, data):
-        """
-        Update user object
-
-        :argument user_id: user id
-        :argument data: dict with data to update
-        :return updated user object
-        """
-        # Use writeback=True to actually
-        # save changes on db close
-        db = shelve.open(
-            settings['db_path'],
-            writeback=True
-        )
-        if not db['users'].get(user_id):
-            db['users'][user_id] = {}
-        db['users'][user_id].update(data)
-        user = db['users'].get(user_id)
-        db.close()
-        raise Return(user or {})
+        await self._save()

@@ -7,8 +7,9 @@
 import logging
 
 from tornado.escape import json_encode
-from tornado.gen import coroutine, Return
 from tornado.websocket import WebSocketHandler
+
+from wormhole_tracker.auxiliaries import s
 
 
 class BaseSocketHandler(WebSocketHandler):
@@ -34,13 +35,11 @@ class BaseSocketHandler(WebSocketHandler):
 
     @property
     def user_id(self):
-        return self.get_secure_cookie("auth_cookie")
+        return s(self.get_secure_cookie("auth_cookie"))
 
     @property
-    @coroutine
     def user(self):
-        user = yield self.application.get_user(self.user_id)
-        raise Return(user)
+        return self.application.users.get(self.user_id)
 
     @property
     def authorize(self):
@@ -50,11 +49,13 @@ class BaseSocketHandler(WebSocketHandler):
     def character(self):
         return self.application.character
 
-    @coroutine
-    def safe_write(self, message):
+    @property
+    def spawn(self):
+        return self.application.spawn
+
+    async def safe_write(self, message):
+        logging.warning(message)
         if self.ws_connection is None:
             logging.error('Connection is already closed.')
-            raise Return(False)
         else:
             self.write_message(json_encode(message))
-            raise Return(True)

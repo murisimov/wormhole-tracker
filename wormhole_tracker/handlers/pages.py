@@ -6,23 +6,19 @@
 
 import logging
 
-from tornado.gen import coroutine
-
-from wormhole_tracker.handlers.base_request import BaseHandler
 from wormhole_tracker.auxiliaries import authenticated
+from wormhole_tracker.handlers.base_request import BaseHandler
 
 
 class SignHandler(BaseHandler):
-    @coroutine
-    def get(self):
+    async def get(self):
         self.render("sign.html")
 
 
 class MainHandler(BaseHandler):
     @authenticated
-    @coroutine
-    def get(self, *args, **kwargs):
-        user = yield self.user
+    async def get(self, *args, **kwargs):
+        user = self.user
         kwargs = {
             'hostname': self.request.host,
             'user': user

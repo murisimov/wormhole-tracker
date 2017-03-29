@@ -4,8 +4,9 @@
 # This file is part of wormhole-tracker package released under
 # the GNU GPLv3 license. See the LICENSE file for more information.
 
-from tornado.gen import coroutine, Return
 from tornado.web import RequestHandler
+
+from wormhole_tracker.auxiliaries import s
 
 
 class BaseHandler(RequestHandler):
@@ -31,13 +32,11 @@ class BaseHandler(RequestHandler):
 
     @property
     def user_id(self):
-        return self.get_secure_cookie("auth_cookie")
+        return s(self.get_secure_cookie("auth_cookie"))
 
     @property
-    @coroutine
     def user(self):
-        user = yield self.application.get_user(self.user_id)
-        raise Return(user)
+        return self.application.users.get(self.user_id)
 
     @property
     def authorize(self):
@@ -46,3 +45,7 @@ class BaseHandler(RequestHandler):
     @property
     def character(self):
         return self.application.character
+
+    @property
+    def spawn(self):
+        return self.application.spawn
