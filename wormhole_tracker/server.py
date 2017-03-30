@@ -224,7 +224,7 @@ Or provide this data as command line arguments as follows:
 
     settings['cookie_secret'] = options.cookie_secret
     app = App(options.client_id, options.client_key, routes, settings)
-    http_server = HTTPServer(app)
+    http_server = HTTPServer(app, xheaders=True)
 
     # TODO: uncomment when obtain db
     #http_server.bind(options.port)
