@@ -40,11 +40,11 @@ start() {
     fi
     echo 'Starting service…' >&2
 
-    local CMD="$SCRIPT &> \"$LOGFILE\" & echo \$!"
+    local CMD="${SCRIPT} &> \"${LOGFILE}\" & echo \$!"
 
     # Try to start service
     if [ ${GROUP} ]; then
-        if sg $RUNAS -c "$CMD"  > "$PIDFILE"; then
+        if sg ${RUNAS} -c "${CMD}"  > "${PIDFILE}"; then
             echo 'Service started' >&2
             exit 0
         else
@@ -52,7 +52,7 @@ start() {
             return 1
         fi
     else
-        if su -c "$CMD" $RUNAS > "$PIDFILE"; then
+        if su -c "${CMD}" ${RUNAS} > "${PIDFILE}"; then
             echo 'Service started' >&2
             exit 0
         else
@@ -60,8 +60,6 @@ start() {
             return 1
         fi
     fi
-
-
 }
 
 stop() {
@@ -70,9 +68,8 @@ stop() {
         return 1
     fi
     echo 'Stopping service…' >&2
-    if pkill -TERM -P $(cat ${PIDFILE}) && rm -f ${PIDFILE}; then
-        echo "Service stopped."
-    elif echo 'Parent not found, killing process itself...' && pkill -TERM -F ${PIDFILE} && rm -f ${PIDFILE}; then
+    if kill -9 $(ps aux | grep "${APPNAME}$" | grep -v grep | awk '{print $2}'); then
+        rm -f ${PIDFILE}
         echo 'Service stopped.'
     else
         echo 'Service stop failed!' >&2
@@ -80,17 +77,30 @@ stop() {
 }
 
 status() {
-        printf "%-50s" "Checking $APPNAME..."
-    if [ -f $PIDFILE ]; then
-        PID=$(cat $PIDFILE)
+    printf "%-50s" "Checking ${APPNAME}..."
+    if [ -f ${PIDFILE} ]; then
+        PID=$(cat ${PIDFILE})
         if [ -z "$(ps axf | grep ${PID} | grep -v grep)" ]; then
             printf "%s\n" "The process appears to be dead but pidfile still exists"
         else
-            echo "Running, the PID is $PID"
+            echo "Running, the PID is ${PID}"
         fi
     else
         printf "%s\n" "Service not running"
     fi
+}
+
+wait_cleanup() {
+    counter=0
+    echo 'Waiting for previous process to clean up...'
+    while [ -n "$(ps aux | grep "${APPNAME}$"  | grep -v grep | awk '{print $2}')" ]; do
+        if [[ ${counter} = 3 ]]; then
+           break
+        fi
+        echo '...'
+        let "counter += 1"
+        sleep 3
+    done
 }
 
 case "$1" in
@@ -105,8 +115,9 @@ case "$1" in
         ;;
     restart)
         stop
+        wait_cleanup
         start
         ;;
     *)
-    echo "Usage: $0 {start|stop|status|restart|reload}"
+    echo "Usage: ${0} {start|stop|status|restart|reload}"
 esac

@@ -15,7 +15,7 @@ def a(string):
 
 
 def s(string):
-    if isinstance(bytes, string):
+    if isinstance(string, (bytes, bytearray)):
         return string.decode('utf-8')
     else:
         return str(string)

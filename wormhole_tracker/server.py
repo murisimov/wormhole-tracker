@@ -225,6 +225,10 @@ Or provide this data as command line arguments as follows:
     settings['cookie_secret'] = options.cookie_secret
     app = App(options.client_id, options.client_key, routes, settings)
     http_server = HTTPServer(app)
+
+    # TODO: uncomment when obtain db
+    #http_server.bind(options.port)
+    #http_server.start(0)  # Use one IOLoop per CPU core
     http_server.listen(options.port)
 
     try:
