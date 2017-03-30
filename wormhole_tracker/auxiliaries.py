@@ -15,7 +15,10 @@ def a(string):
 
 
 def s(string):
-    return string.decode('utf-8')
+    if isinstance(bytes, string):
+        return string.decode('utf-8')
+    else:
+        return str(string)
 
 
 async def token_gen():
