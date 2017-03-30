@@ -54,7 +54,6 @@ class BaseSocketHandler(WebSocketHandler):
         return self.application.spawn
 
     async def safe_write(self, message):
-        logging.warning(message)
         if self.ws_connection is None:
             logging.error('Connection is already closed.')
         else:

@@ -53,9 +53,9 @@ class Router(object):
         self.user_id = user_id  # User's id, will be used to get user object
         self.application = app  # Application object
         self.previous = ""      # Player's location fetched on the last API call
-        self.connections = []   # List with tuples of all star system interconnections
+        self.connections = []   # List with tuples of system interconnections
         self.systems = []       # List with all visited systems
-        self.recovery = {       # Storage for front-end data, required for recovery
+        self.recovery = {       # Storage for front-end data, for recovery
             'nodes': [], 'links': []
         }
 
@@ -73,23 +73,27 @@ class Router(object):
         Check current location, update internal state if it
         is changed, return data for front-end graph drawing.
         
-        :argument     current: users's current in-game location
-        :return: dict with `current` location, node and link info for D3.js
+        :argument current: users's current in-game location
+        :return:  dict with `current` location, node and link info for D3.js
 
         """
         if self.previous != current:
             result = {'current': current}
+
+            # Create star system `node`
             if current not in self.systems:
                 self.systems.append(current)
                 result['node'] = {'name': current}
 
-            if self.previous and (self.previous, current) not in self.connections:
-                if (current, self.previous) not in self.connections:
-                    self.connections.append((self.previous, current))
-                    result['link'] = {
-                        'source': self.previous,
-                        'target': current
-                    }
+            # Create `link` between two systems
+            if self.previous:
+                if (self.previous, current) not in self.connections:
+                    if (current, self.previous) not in self.connections:
+                        self.connections.append((self.previous, current))
+                        result['link'] = {
+                            'source': self.previous,
+                            'target': current
+                        }
             self.previous = current
             # Since router object has changed we need to update user data
             await self._save()
