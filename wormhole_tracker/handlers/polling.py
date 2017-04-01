@@ -26,6 +26,7 @@ class PollingHandler(BaseSocketHandler):
         # will use launch it later on track/untrack commands
         self.tracker = PeriodicCallback(self.track, 5000)
         self.q = Queue(maxsize=5)
+        self.updating = False
 
     async def track(self):
         """
@@ -37,6 +38,9 @@ class PollingHandler(BaseSocketHandler):
         location = await self.character(self.user_id, '/location/', 'GET')
 
         if location:
+            # Set `updating` flag to not accept periodic updates
+            # from front-end, to not overwrite new data
+            self.updating = True
             user = self.user
             graph_data = await user['router'].update(
                 location['solarSystem']['name']
@@ -45,6 +49,7 @@ class PollingHandler(BaseSocketHandler):
                 message = ['update', graph_data]
                 logging.warning(graph_data)
                 await self.safe_write(message)
+            self.updating = False
         else:
             message = ['warning', 'Log into game to track your route']
             await self.safe_write(message)
@@ -65,7 +70,7 @@ class PollingHandler(BaseSocketHandler):
 
         # Wait on each iteration until there's actually an item available
         async for item in self.q:
-            logging.info(f"Started resolving task for {item}...")
+            #logging.info(f"Started resolving task for {item}...")
             user = self.user
             try:
                 if item == 'recover':
@@ -85,10 +90,13 @@ class PollingHandler(BaseSocketHandler):
                         await user['router'].reset()
 
                 elif item[0] == 'backup':
-                    await user['router'].backup(item[1])
+                    # Do not overwrite user object while it's updating,
+                    # just in case, to avoid race conditions.
+                    if not self.updating:
+                        await user['router'].backup(item[1])
             finally:
                 self.q.task_done()
-                logging.warning(f'Task "{item}" done.')
+                #logging.warning(f'Task "{item}" done.')
 
     async def task(self, item):
         """

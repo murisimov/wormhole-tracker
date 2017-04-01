@@ -55,7 +55,7 @@ class Router(object):
         self.connections = []   # List with tuples of system interconnections
         self.systems = []       # List with all visited systems
         self.recovery = {       # Storage for front-end data, for recovery
-            'nodes': [], 'links': []
+            'nodes': [], 'links': [], 'current': ''
         }
 
     async def _save(self):
@@ -100,6 +100,7 @@ class Router(object):
 
     async def backup(self, data):
         self.recovery = data
+        self.recovery['current'] = self.previous
         await self._save()
 
     async def reset(self):
@@ -109,4 +110,5 @@ class Router(object):
         self.previous = ""
         self.connections = []
         self.systems = []
+        self.recovery = {}
         await self._save()

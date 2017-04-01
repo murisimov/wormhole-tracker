@@ -22,6 +22,8 @@ var link, node;
 
 function draw(graph) {
     console.log(graph);
+    if (graph.current) current_system = graph.current;
+
     force.nodes(graph.nodes)
          .links(graph.links)
          .start();
@@ -42,12 +44,23 @@ function draw(graph) {
 
     node.append("circle")
         .attr("r", 5)
-        .style("fill", function(d) { return color(0); });
+        .style("fill", function(d) {
+            if (d.name == current_system) {
+                return 'tomato';
+            }
+            return color(0);
+        });
 
     node.append("text")
         .attr("dx", 12)
         .attr("dy", ".35em")
-        .text(function(d) { return d.name; });
+        .attr("fill", "aliceblue")
+        .text(function(d) {
+            if (d.name == current_system) {
+                return '[ ' + d.name + ' ]';
+            }
+            return d.name;
+        });
 
     force.on("tick", function() {
         link.attr("x1", function(d) { return d.source.x; })
@@ -73,6 +86,7 @@ function clear_svg() {
 }
 
 function clear_path() {
+    star_systems.current = '';
     star_systems.nodes = [];
     star_systems.links = [];
 }
@@ -83,36 +97,56 @@ function track_reset() {
     console.warn("Tracking reset");
 }
 
-function bind_link(l) {
-    for (var i in star_systems.nodes) {
-        var n = star_systems.nodes[i];
-        if (l.source == n.name) {
+function bind_link(data, l) {
+    for (var i in data.nodes) {
+        var n = data.nodes[i];
+        if (l.source === n.name) {
             l.source = n;
         }
-        else if (l.target == n.name) {
+        else if (l.target === n.name) {
             l.target = n;
         }
     }
 }
 
 function save_graph() {
-    star_systems.nodes = node.data();
-    star_systems.links = link.data();
+    star_systems.current = current_system;
+    star_systems.nodes   = node.data();
+    star_systems.links   = link.data();
 }
 
 function redraw(data) {
     // Redraw only if we got at least something
-    if (data.node || data.link) {
+    if (data.node || data.link || data.current) {
+        if (data.current) {
+            star_systems.current = data.current;
+        }
         if (data.node) {
             star_systems.nodes.push(data.node);
         }
         if (data.link) {
-            bind_link(data.link);
+            bind_link(star_systems, data.link);
             star_systems.links.push(data.link);
         }
         clear_svg();
         draw(star_systems);
         save_graph();
     }
+}
+
+function recover(data) {
+    for (var l in data.links) {
+        for (var n in data.nodes) {
+            var _link = data.links[l],
+                _node = data.nodes[n];
+            if (_link.source.name === _node.name) {
+                _link.source = _node;
+            }
+            else if (_link.target.name === _node.name) {
+                _link.target = _node;
+            }
+        }
+    }
+    return data;
 }
 

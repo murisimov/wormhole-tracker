@@ -29,6 +29,8 @@ function untrack() {
 }
 
 
+
+
 $(document).ready(function() {
     if ("MozWebSocket" in window) {
         WebSocket = MozWebSocket;
@@ -53,12 +55,11 @@ $(document).ready(function() {
                 if (data) {
                     console.log(data);
                     redraw(data);
-                    var backup = jQuery.extend(true, {}, star_systems);
-                    send(['backup', star_systems]);
                 }
             }
             else if (type === 'recover') {
                 clear_svg();
+                data = recover(data);
                 draw(data);
                 save_graph();
             }
@@ -66,6 +67,14 @@ $(document).ready(function() {
                 warning(data);
             }
         };
+
+        function send_backup() {
+            var backup = jQuery.extend(true, {}, star_systems);
+            send(['backup', star_systems]);
+        }
+
+        setInterval(send_backup, 3000);
+
         ws.onclose = function() {
             console.warn("WS connection closed");
             untrack();
