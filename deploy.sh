@@ -16,12 +16,15 @@
 
 
 app_name="wormhole-tracker"
+
 app_dir="wormhole_tracker"
 
-envs_dir="${HOME}/.envs"  # Edit this if you already have your own python environments elsewhere
+envs_dir="/home/${app_name}/.envs"
 
 app_env="${envs_dir}/${app_name}"
+
 daemon="/etc/init.d/${app_name}-daemon"
+
 py_version="3.6"
 
 print () {
@@ -71,6 +74,14 @@ if pip install virtualenv; then
         # Install application and its dependencies under virtualenv
         if ${app_env}/bin/python setup.py install --record files.txt >install.log; then
             print "Application installed."
+
+            print "Setting up access rights..."
+            if chown -R ${app_name}:${app_name} /home/${app_name}; then
+                print "Rights given."
+            else
+                print "Error occured, aborting."
+                exit 1
+            fi
         else
             print "Failed to install application, aborting."
             exit 1

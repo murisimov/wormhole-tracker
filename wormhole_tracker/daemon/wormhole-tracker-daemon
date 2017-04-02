@@ -14,9 +14,9 @@
 
 APPNAME='wormhole-tracker'
 
-SCRIPT="${HOME}/.envs/${APPNAME}/bin/${APPNAME}"
+SCRIPT="/home/${APPNAME}/.envs/${APPNAME}/bin/${APPNAME}"
 
-USER=''
+USER="${APPNAME}"
 GROUP=''
 
 if [ ${GROUP} ]; then
