@@ -169,18 +169,25 @@ class App(Application):
         try:
             response = await http_client.fetch(request)
         except HTTPError as e:
-            logging.error(e)
-            # Authorize again with refresh_token
-            await self.authorize(user['refresh_token'], refresh=True)
-            # And then refresh user object
-            user = self.users[user_id]
-            headers['Authorization'] = 'Bearer ' + user['access_token']
-            try:
-                response = await http_client.fetch(request)
-            except HTTPError as e:
-                logging.error(f"ERROR OCCURRED: {e}")
-            else:
-                return json_decode(response.body)
+            if e.code == 401:
+                logging.warning("Access token became obsolete, re-authorizing.")
+
+                # Authorize again using refresh_token
+                user_id = await self.authorize(
+                    user['refresh_token'], refresh=True
+                )
+                # And then refresh user object
+                user = self.users[user_id]
+                headers['Authorization'] = 'Bearer ' + user['access_token']
+                try:
+                    response = await http_client.fetch(request)
+                except HTTPError as e:
+                    logging.error(f"UNEXPECTED ERROR OCCURRED: {e}")
+                else:
+                    return json_decode(response.body)
+            elif e.code == 503:
+                if e.response:
+                    logging.warning(e.response)
         else:
             logging.debug(response)
             return json_decode(response.body)
