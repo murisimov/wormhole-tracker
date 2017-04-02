@@ -15,24 +15,31 @@ from wormhole_tracker.handlers.base_socket import BaseSocketHandler
 class PollingHandler(BaseSocketHandler):
     """
     This class represents separate websocket connection.
+    
+    Attributes:
+        tracker: tornado.ioloop.PeriodicCallback with get_location method as a
+            callback. Starts when user pushes "track" button. When started, it
+            runs every 5 seconds to find out and update character's location.
+            
+        q: tornado.queues.Queue used for running tasks successively.
+        
+        updating: A flag indicates if router is being updated or not. Required
+            to avoid race conditions.
     """
     def __init__(self, *args, **kwargs):
-        """
-        Trigger parent's __init__, register periodic callback which will
-        be used for tracking, and queue for user tasks
-        """
         super(PollingHandler, self).__init__(*args, **kwargs)
         # Set Tornado PeriodicCallback with our self.track, we
         # will use launch it later on track/untrack commands
-        self.tracker = PeriodicCallback(self.track, 5000)
+        self.tracker = PeriodicCallback(self.get_location, 5000)
         self.q = Queue(maxsize=5)
         self.updating = False
 
-    async def track(self):
+    async def get_location(self):
         """
-        This is actually the tracking function. When user pushes "track" button,
-        PeriodicCallback starts and fires once in 5 seconds, makes an API call
-        and updates changed router. And stops on "untrack" button action.
+        The callback for the `self.tracker`.
+        
+        Makes an API call, updates router and sends updated data to the
+        front-end.
         """
         # Call API to find out current character location
         location = await self.character(self.user_id, '/location/', 'GET')
@@ -58,19 +65,19 @@ class PollingHandler(BaseSocketHandler):
         """
         Scheduler for user tasks.
         
-        Wait until there is new item in the queue, get job done, resolve task.
+        Waits until there is new item in the queue, does task, resolves task.
         Tornado queues doc: http://www.tornadoweb.org/en/stable/queues.html
         
-        Since we have no guarantee of the order of the incoming messages (new
-        message from front-end can come before current is done), we need to
-        ensure all tasks to run successively.
+        Since we have no guarantee of the order of the incoming messages
+        (new message from front-end can come before current is done),
+        we need to ensure all tasks to run successively.
         Here comes the asynchronous generator.
         """
         logging.info(f"Scheduler started for {self.request.remote_ip}")
 
         # Wait on each iteration until there's actually an item available
         async for item in self.q:
-            #logging.info(f"Started resolving task for {item}...")
+            logging.debug(f"Started resolving task for {item}...")
             user = self.user
             try:
                 if item == 'recover':
@@ -86,6 +93,7 @@ class PollingHandler(BaseSocketHandler):
                     # Stop the PeriodicCallback
                     if self.tracker.is_running():
                         self.tracker.stop()
+                    # Clear all saved data
                     if item == 'reset':
                         await user['router'].reset()
 
@@ -96,16 +104,16 @@ class PollingHandler(BaseSocketHandler):
                         await user['router'].backup(item[1])
             finally:
                 self.q.task_done()
-                #logging.warning(f'Task "{item}" done.')
+                logging.debug(f'Task "{item}" done.')
 
     async def task(self, item):
         """
-        Intermediary between `on_message` and `scheduler`.
+        Intermediary between `self.on_message` and `self.scheduler`.
         
-        Since we cannot do anything asynchronous in the `on_message`, this
-        method can handle any additional non-blocking stuff if we need it.
+        Since we cannot do anything asynchronous in the `self.on_message`,
+        this method can handle any additional non-blocking stuff if we need it.
         
-        :argument item: item to pass to the `scheduler`
+        :argument item: item to pass to the `self.scheduler`.
         """
         await self.q.put(item)
         #await self.q.join()
@@ -114,9 +122,9 @@ class PollingHandler(BaseSocketHandler):
         """
         Triggers on successful websocket connection.
         
-        Ensure user is authorized, spawn `scheduler` for user tasks, add this
-        websocket object to the connections pool, spawn the recovery of the
-        saved route.
+        Ensures user is authorized, spawns `self.scheduler` for user
+        tasks, adds this websocket object to the connections pool,
+        spawns the recovery of the saved route.
         """
         logging.info(f"Connection received from {self.request.remote_ip}")
         if self.user_id:
@@ -131,10 +139,10 @@ class PollingHandler(BaseSocketHandler):
         """
         Triggers on receiving front-end message.
         
-        :argument message: front-end message
+        :argument message: front-end message.
         
-        Receive user commands here and pass 
-        them to the `scheduler` via `task`
+        Receives user commands and passes them
+        to the `self.scheduler` via `self.task`.
         """
         self.spawn(self.task, json_decode(message))
 
@@ -142,10 +150,11 @@ class PollingHandler(BaseSocketHandler):
         """
         Triggers on closed websocket connection.
         
-        Remove this websocket object from the connections pool,
-        stop `tracker` if it is running.
+        Removes this websocket object from the connections pool,
+        stops `self.tracker` if it is running.
         """
         self.vagrants.remove(self)
         if self.tracker.is_running():
             self.tracker.stop()
         logging.info("Connection closed, " + self.request.remote_ip)
+
