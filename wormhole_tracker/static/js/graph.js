@@ -2,8 +2,8 @@
 // the GNU GPLv3 license. See the LICENSE file for more information.
 
 
-var width  = document.getElementById('route_container').clientWidth,
-    height = document.getElementById('route_container').clientHeight;
+var width  = document.body.clientWidth,
+    height = document.body.clientHeight;
 
 //var color = d3.scale.category20();
 
