@@ -11,21 +11,24 @@
 # - Installs virtualenv python package
 # - Sets up the venv for the application
 # - Installs application itself
+# - Copies configuration template
 # - Installs application daemon
 # - Starts application daemon.
 
 
 app_name="wormhole-tracker"
 
-app_dir="wormhole_tracker"
+package_dir="wormhole_tracker"
 
 envs_dir="/home/${app_name}/.envs"
 
 app_env="${envs_dir}/${app_name}"
 
-daemon="/etc/init.d/${app_name}-daemon"
+daemon_path="/home/${app_name}/${app_name}-daemon"
 
 py_version="3.6"
+
+conf_file="${app_name}.conf"
 
 print () {
     echo; echo $1; echo
@@ -43,8 +46,9 @@ if [ -z "$(which python${py_version} 2>/dev/null | grep -E "(/\w+)+/python${py_v
     exit 1
 fi
 
-${daemon} stop &> /dev/null
-rm -f ${daemon} &> /dev/null
+# Stop daemon if it is running, just in case
+${daemon_path} stop &> /dev/null
+rm -f ${daemon_path} &> /dev/null
 
 print "Adding user '${app_name}'..."
 if id -u ${app_name} > /dev/null; then
@@ -74,14 +78,6 @@ if pip install virtualenv; then
         # Install application and its dependencies under virtualenv
         if ${app_env}/bin/python setup.py install --record files.txt >install.log; then
             print "Application installed."
-
-            print "Setting up access rights..."
-            if chown -R ${app_name}:${app_name} /home/${app_name}; then
-                print "Rights given."
-            else
-                print "Error occured, aborting."
-                exit 1
-            fi
         else
             print "Failed to install application, aborting."
             exit 1
@@ -95,12 +91,33 @@ else
     exit 1
 fi
 
+if [ -n "${conf_file}" ]; then
+    print "Copying configuration file template..."
+    if ! [ -f "/home/${app_name}/${conf_file}" ]; then
+        if cp ${conf_file} /home/${app_name}/${conf_file}; then
+            print "Configuration template copied."
+        else
+            print "Failed to copy configuration template"
+        fi
+    else
+        print "Configuration file already exists, skipping."
+    fi
+fi
+
 print "Installing ${app_name} daemon..."
-if cp ${app_dir}/daemon/${app_name}-daemon /etc/init.d/; then
+if cp ${package_dir}/daemon/${app_name}-daemon ${daemon_path} && chmod +x ${daemon_path}; then
     print "Daemon script installed."
 else
-    print "Failed to copy daemon script to the /etc/init.d/"
+    print "Failed to copy daemon script to the ${daemon_path}"
     exit 1
 fi
 
-${daemon} start
+print "Setting up access rights..."
+if chown -R ${app_name}:${app_name} /home/${app_name}; then
+    print "Rights given."
+else
+    print "Error occured, aborting."
+    exit 1
+fi
+
+${daemon_path} start

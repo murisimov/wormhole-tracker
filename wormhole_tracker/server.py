@@ -195,7 +195,7 @@ class App(Application):
 
 def main():
     try:
-        parse_config_file('/etc/wormhole-tracker.conf')
+        parse_config_file('/home/wormhole-tracker/wormhole-tracker.conf')
     except Exception as e:  # TODO: specify correct exception here
         logging.warning(e)
         parse_command_line()
@@ -206,7 +206,8 @@ def main():
       or not options.cookie_secret):
         error = """
 
-Please create configuration file /etc/wormhole-tracker.conf and fill it as follows:
+Please create configuration file /home/wormhole-tracker/wormhole-tracker.conf
+and fill it as follows:
 
     client_id     = "your_eve_app_id"
     client_key    = "your_eve_app_key"
@@ -217,10 +218,11 @@ For example:
 
     client_id     = "334jjnn32i23yv23592352352sa3n52b"
     client_key    = "3534ui32b5223yu5u2v35v23v523v3fg"
-    redirect_uri  = "http://my-awesome-eve-app.com" # the "http(s)://" IS required!
+    redirect_uri  = "http://my-awesome-eve-app.com"  # "http(s)://" IS required!
     cookie_secret = "WYkRXG1RJhmpYlYCA2D99EFRz9lt709t"
 
-Or provide this data as command line arguments as follows:
+Or, if you launch the application via terminal, provide this data
+as command line arguments as follows:
 
     wormhole-tracker --client_id="eve_app_id" \\
                      --client_key="eve_app_key" \\
