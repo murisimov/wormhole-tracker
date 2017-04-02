@@ -5,6 +5,8 @@
 /* Type stuff */
 
 function type_of(value) {
+    // More correct type check
+
     var s = typeof value;
     if (s === 'object') {
         if (value) {
@@ -17,6 +19,8 @@ function type_of(value) {
     }
     return s;
 }
+
+// Type converters
 
 function int(number) {
     return parseInt(number);
@@ -49,10 +53,12 @@ function range(num) {
 /* Objects stuff */
 
 function clone(obj) {
+    // Create clone of `obj` and return it
     return jQuery.extend(true, {}, obj);
 }
 
 function merge(source, obj) {
+    // Merge `obj` into `source`
     jQuery.extend(true, source, obj);
 }
 

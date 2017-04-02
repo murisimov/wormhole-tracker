@@ -30,16 +30,17 @@ function untrack() {
 
 
 
-
 $(document).ready(function() {
     if ("MozWebSocket" in window) {
         WebSocket = MozWebSocket;
     }
     if (WebSocket) {
         var ws = new WebSocket("ws://" + window.location.host + "/poll");
+
         var send = function(message) {
             ws.send(JSON.stringify(message))
         };
+
         ws.onopen = function() {
             console.warn("WS connection established");
         };
@@ -67,18 +68,20 @@ $(document).ready(function() {
                 warning(data);
             }
         };
+        ws.onclose = function() {
+            console.warn("WS connection closed");
+            untrack();
+        };
 
         function send_backup() {
-            var backup = jQuery.extend(true, {}, star_systems);
+            var backup = clone(star_systems);
             send(['backup', star_systems]);
         }
 
         setInterval(send_backup, 3000);
 
-        ws.onclose = function() {
-            console.warn("WS connection closed");
-            untrack();
-        };
+
+        // Button event handlers
 
         $('#track').on('click', (function() {
             send("track");

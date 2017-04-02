@@ -2,10 +2,10 @@
 // the GNU GPLv3 license. See the LICENSE file for more information.
 
 
-var width = 960,
-    height = 500;
+var width  = document.getElementById('route_container').clientWidth,
+    height = document.getElementById('route_container').clientHeight;
 
-var color = d3.scale.category20();
+//var color = d3.scale.category20();
 
 var force = d3.layout.force()
     .charge(-120)
@@ -45,10 +45,10 @@ function draw(graph) {
     node.append("circle")
         .attr("r", 5)
         .style("fill", function(d) {
-            if (d.name == current_system) {
+            if (d.name === current_system) {
                 return 'tomato';
             }
-            return color(0);
+            return 'beige';
         });
 
     node.append("text")
@@ -56,7 +56,7 @@ function draw(graph) {
         .attr("dy", ".35em")
         .attr("fill", "aliceblue")
         .text(function(d) {
-            if (d.name == current_system) {
+            if (d.name === current_system) {
                 return '[ ' + d.name + ' ]';
             }
             return d.name;
@@ -79,7 +79,7 @@ function draw(graph) {
     }
 }
 
-draw(star_systems); // Initial graph drawing
+//draw(star_systems); // Initial graph drawing
 
 function clear_svg() {
     svg.selectAll("*").remove();
