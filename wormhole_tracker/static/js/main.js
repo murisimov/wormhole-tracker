@@ -51,18 +51,17 @@ $(document).ready(function() {
             var type = message[0],
                 data = message[1];
 
+            console.warn(data);
+
             if (type === 'update') {
                 warning();
                 if (data) {
                     console.log(data);
-                    redraw(data);
+                    graph.update(data);
                 }
             }
             else if (type === 'recover') {
-                clear_svg();
-                data = recover(data);
-                draw(data);
-                save_graph();
+                graph.update(data);
             }
             else if (type === 'warning') {
                 warning(data);
@@ -74,8 +73,8 @@ $(document).ready(function() {
         };
 
         function send_backup() {
-            var backup = clone(star_systems);
-            send(['backup', star_systems]);
+            var backup = graph.backup();
+            send(['backup', backup]);
         }
 
         setInterval(send_backup, 3000);
@@ -94,7 +93,7 @@ $(document).ready(function() {
         $('#reset').on('click', (function() {
             send("reset");
             untrack();
-            track_reset();
+            graph.reset();
         }));
     } else {
         alert("WebSocket not supported");

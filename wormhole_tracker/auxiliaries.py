@@ -82,17 +82,17 @@ class Router(object):
             # Create star system `node`
             if current not in self.systems:
                 self.systems.append(current)
-                result['node'] = {'name': current}
+                result['nodes'] = [{'name': current}]
 
             # Create `link` between two systems
             if self.previous:
                 if (self.previous, current) not in self.connections:
                     if (current, self.previous) not in self.connections:
                         self.connections.append((self.previous, current))
-                        result['link'] = {
-                            'source': self.previous,
-                            'target': current
-                        }
+                        result['links'] = [{
+                            'source': {'name': self.previous},
+                            'target': {'name': current}
+                        }]
             self.previous = current
             # Since router object has changed we need to update user data
             await self._save()
