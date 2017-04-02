@@ -34,22 +34,23 @@ Sure, just follow the instructions below.
 
 ---
 - Download or clone this repository, enter the repository directory and run `bash deploy.sh`. It will:
-    - Create user for the application to run, with home directory at `/home/wormhole-tracker`. There you can find the application log.
+    - Create user for the application to run, with home directory at `/home/wormhole-tracker`.
     - Create directory `.envs/` inside new user's home directory
     - Install `virtualenv` if it is not installed
     - Create virtual environment for the application
-    - Install application itself
-    - Copy configuration template
-    - Install application daemon to the `/etc/init.d/wormhole-tracker-daemon` and start it on behalf new user
+    - Install the application itself
+    - Copy the configuration template
+    - Install the application daemon to the `/etc/init.d/wormhole-tracker-daemon` and start it on behalf new user
 - If you want to change any of those things just check out variables at the top of `deploy.sh`.
 - In the end new user's home dir will look like this:
 ```
 /home/
     wormhole-tracker/
-        wormhole-tracker.conf    # Configuration file
-        wormhole-tracker-daemon  # Daemon file
-        wormhole-tracker.log     # Application log
-        wormhole-tracker.pid     # Daemon's process file
+        .envs/wormhole-tracker/...  # virtual environment
+        wormhole-tracker.conf       # Configuration file
+        wormhole-tracker-daemon     # Daemon file
+        wormhole-tracker.log        # Application log
+        wormhole-tracker.pid        # Daemon's process file
 ```
 - Feel free to re-run the deploy script to re-deploy the application, it won't touch the configuration.
 
@@ -60,8 +61,9 @@ Sure, just follow the instructions below.
 ###### Third-party application setup
 
 ---
-Before getting any further, you must have EVE online third-party app which you can create and setup [here](developers.eveonline.com/applications)
-Give it any name and description you like, select _Authentication & API Access_ connection type and choose following permissions to use:
+Before getting any further, you must have EVE online third-party app which you can create and setup [here](developers.eveonline.com/applications).
+
+Give it any name and description you like, select **Authentication & API Access** connection type and choose following permissions to use:
 
 - `characterLocationRead`
 - `characterBookmarksRead`
@@ -72,7 +74,7 @@ Give it any name and description you like, select _Authentication & API Access_ 
 
 `http://` and `/auth/` parts **are** required.
 
-In your application details you will see `Client ID` and `Secret Key`. You will need it for the next step.
+In your application details you will see `Client ID` and `Secret Key`. You will need this stuff for the next step.
 
 ---
 ###### Filling up the configuration file
@@ -87,12 +89,14 @@ There are 4 variables you'll have to define in the `wormhole-tracker.conf`:
 
 
 
-You can generate cookie secret as follows:
+You can generate `cookie_secret` as follows:
 
 - Go to your python3.6 console and do `import base64` and `from os import urandom`
 - Then do `b64encode(urandom(24)).strip()`, it's your secret value.
 
-At the end, your configuration file should look like this:
+...or any way you like, the main point that it should be a base64-encoded value.
+
+At the end, your configuration file should look something like this:
 
 ```python
 client_id     = "334jjnn32i23yv23592352352sa3n52b"
@@ -101,6 +105,10 @@ redirect_uri  = "http://your-ip-or-domain/auth/"  # "http(s)://" and "/auth/" AR
 cookie_secret = "WYkRXG1RJhmpYlYCA2D99EFRz9lt709t"
 ```
 
-And it seems like you're done. Enjoy your tracking! 07
+After managing all this stuff, run `/home/wormhole-tracker/wormhole-tracker-daemon start` in the terminal.
+The daemon keeps his `.pid` file in the home directory and accepts standard daemon commands, `{start|stop|status|restart}`.
+
+---
+And I hope you're done. Enjoy your tracking! 07
 
 ---
