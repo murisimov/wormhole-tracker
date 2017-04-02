@@ -17,7 +17,10 @@
 
 app_name="wormhole-tracker"
 app_dir="wormhole_tracker"
-env_dir="${HOME}/.envs/${app_name}"
+
+envs_dir="${HOME}/.envs"  # Edit this if you already have your own python environments elsewhere
+
+app_env="${envs_dir}/${app_name}"
 daemon="/etc/init.d/${app_name}-daemon"
 py_version="3.6"
 
@@ -55,20 +58,18 @@ fi
 print "Installing virtualenv..."
 if pip install virtualenv; then
     # Create vitrualenv for the app
-    mkdir -p ${HOME}/.envs
+    mkdir -p ${envs_dir}
 
-    echo ${env_dir}
-    echo ls ${env_dir}
-    if [ -d "${env_dir}" ]; then
+    if [ -d "${app_env}" ]; then
         print "Cleaning old virtualenv..."
-        rm -rf ${env_dir}
+        rm -rf ${app_env}
     fi
 
     print "Success. Creating virtualenv for ${app_name}..."
-    if python${py_version} -m venv ${env_dir}; then
+    if python${py_version} -m venv ${app_env}; then
         print "Success. Installing ${app_name} application..."
         # Install application and its dependencies under virtualenv
-        if ${env_dir}/bin/python setup.py install --record files.txt >install.log; then
+        if ${app_env}/bin/python setup.py install --record files.txt >install.log; then
             print "Application installed."
         else
             print "Failed to install application, aborting."
