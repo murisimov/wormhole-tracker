@@ -34,19 +34,19 @@ Sure, just follow the instructions below.
 
 ---
 - Download or clone this repository, enter the repository directory and run `bash deploy.sh`. It will:
-    - Create user for the application to run, with home directory at `/home/wormhole-tracker`.
-    - Create directory `.envs/` inside new user's home directory
-    - Install `virtualenv` if it is not installed
-    - Create virtual environment for the application
-    - Install the application itself
-    - Copy the configuration template
-    - Install the application daemon to the `/etc/init.d/wormhole-tracker-daemon` and start it on behalf new user
+    - create user for the application to run, with home directory at `/home/wormhole-tracker`.
+    - create directory `.envs/` inside new user's home directory
+    - install `virtualenv` if it is not installed
+    - create virtual environment for the application
+    - install the application itself
+    - copy the configuration template
+    - install the application daemon to the `/etc/init.d/wormhole-tracker-daemon` and start it on behalf new user
 - If you want to change any of those things just check out variables at the top of `deploy.sh`.
 - In the end new user's home dir will look like this:
 ```
 /home/
     wormhole-tracker/
-        .envs/wormhole-tracker/...  # virtual environment
+        .envs/wormhole-tracker/...  # virtual environment folder
         wormhole-tracker.conf       # Configuration file
         wormhole-tracker-daemon     # Daemon file
         wormhole-tracker.log        # Application log
