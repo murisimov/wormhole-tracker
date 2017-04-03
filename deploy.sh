@@ -30,6 +30,14 @@ py_version="3.6"
 
 conf_file="${app_name}.conf"
 
+app_domain_zone="pw"
+
+nginx_conf_file="${app_name}-nginx.conf"
+
+nginx_domain="${app_name}.${app_domain_zone}"
+
+nginx_log_dir="${app_name}"
+
 print () {
     echo; echo $1; echo
 }
@@ -119,5 +127,24 @@ else
     print "Error occured, aborting."
     exit 1
 fi
+
+print "Setting up nginx virtual host..."
+
+included="$(grep -E '^\s*include\s+/etc/nginx/sites-enabled/\*\s*;.*$' /etc/nginx/nginx.conf)"
+print ${included}
+if [ -z "${included}" ]; then
+    sed -i '/include \/etc\/nginx/a include \/etc\/nginx\/sites-enabled\/\*\;' /etc/nginx/nginx.conf
+fi
+
+rm -f /etc/nginx/sites-available/${nginx_conf_file}
+cp ${package_dir}/nginx/${nginx_conf_file} /etc/nginx/sites-available/
+if ! [ -f /etc/nginx/sites-enabled/${nginx_conf_file} ]; then
+    ln -s /etc/nginx/sites-available/${nginx_conf_file} /etc/nginx/sites-enabled/${nginx_conf_file}
+fi
+sed -iE "s/domain_placeholder/${nginx_domain}/g" /etc/nginx/sites-available/${nginx_conf_file}
+sed -iE "s/log_placeholder/${nginx_log_dir}/g" /etc/nginx/sites-available/${nginx_conf_file}
+rm -f /etc/nginx/sites-available/${nginx_conf_file}E
+mkdir -p /var/log/nginx/${nginx_log_dir} && chown -R www-data:adm /var/log/nginx/${nginx_log_dir}
+
 
 ${daemon_path} start
