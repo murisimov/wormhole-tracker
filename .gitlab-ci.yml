@@ -13,3 +13,4 @@ deploy:
 run:
   script:
     - docker-compose up
+  stage: run
