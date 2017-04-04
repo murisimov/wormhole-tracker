@@ -13,7 +13,7 @@ WORKDIR /srv/${app}
 
 RUN pwd
 
-RUN ["/bin/bash", "./deploy.sh"]
+RUN ["/bin/bash", "deploy.sh"]
 
 #RUN /etc/init.d/wormhole-tracker-daemon start
 
