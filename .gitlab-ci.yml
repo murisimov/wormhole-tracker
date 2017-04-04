@@ -1,8 +1,13 @@
-image: python:3.6
+image: debian:wheezy
 
 services:
+  - python:3.6
   - nginx:1.10
+
+stages:
+  - deploy
 
 deploy:
   script: bash deploy.sh
+  stage: deploy
 
