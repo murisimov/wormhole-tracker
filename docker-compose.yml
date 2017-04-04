@@ -1,16 +1,6 @@
-version: '2'
-
-services:
-  nginx:
-    image: nginx:1.10
-    ports:
-      - "80:80"
-    restart: always
-
-
-  wormhole-tracker:
-    build: .
-    depends_on:
-      - nginx
-
+wormhole-tracker:
+  build: .
+  ports:
+    - "80:80"
+  restart: always
 

@@ -145,6 +145,3 @@ sed -iE "s/domain_placeholder/${nginx_domain}/g" /etc/nginx/sites-available/${ng
 sed -iE "s/log_placeholder/${nginx_log_dir}/g" /etc/nginx/sites-available/${nginx_conf_file}
 rm -f /etc/nginx/sites-available/${nginx_conf_file}E
 mkdir -p /var/log/nginx/${nginx_log_dir} && chown -R www-data:adm /var/log/nginx/${nginx_log_dir}
-
-
-${daemon_path} start

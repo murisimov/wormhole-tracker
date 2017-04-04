@@ -12,8 +12,6 @@ WORKDIR /srv/${app}
 
 RUN ["/bin/bash", "deploy.sh"]
 
-#RUN /etc/init.d/wormhole-tracker-daemon start
+#RUN /etc/init.d/wormhole-tracker-daemon status
 
-RUN /etc/init.d/wormhole-tracker-daemon status
-
-
+EXPOSE 80
