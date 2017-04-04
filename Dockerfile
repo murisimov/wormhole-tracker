@@ -22,4 +22,4 @@ RUN echo "cookie_secret = '$COOKIE_SECRET'" >> ${app_home}/wormhole-tracker.conf
 
 EXPOSE 80
 
-CMD ["/bin/bash", "run.sh"]
+CMD bash
