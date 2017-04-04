@@ -1,5 +1,6 @@
 stages:
   - deploy
+  - run
 
 before_script:
   - docker info
@@ -9,4 +10,6 @@ deploy:
     - docker-compose build
   stage: deploy
 
-
+run:
+  script:
+    - docker-compose up
