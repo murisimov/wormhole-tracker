@@ -24,4 +24,4 @@ EXPOSE 80
 
 RUN service nginx start
 
-CMD ${app_home}/wormhole-tracker-daemon start; bash
+CMD ${app_home}/wormhole-tracker-daemon start && tail -f ${app_home}/wormhole-tracker.log
