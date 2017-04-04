@@ -22,6 +22,4 @@ RUN echo "cookie_secret = '$COOKIE_SECRET'" >> ${app_home}/wormhole-tracker.conf
 
 EXPOSE 80
 
-RUN service nginx start
-
-CMD ${app_home}/wormhole-tracker-daemon start && tail -f ${app_home}/wormhole-tracker.log
+CMD ["/bin/bash", "run.sh"]
