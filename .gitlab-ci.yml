@@ -1,7 +1,6 @@
-image: debian:wheezy
+image: python:3.6
 
 services:
-  - python:3.6
   - nginx:1.10
 
 stages:
