@@ -1,11 +1,17 @@
-wormhole-tracker:
-  build: .
-  environment:
-    - CLIENT_ID
-    - CLIENT_KEY
-    - REDIRECT_URI
-    - COOKIE_SECRET
-  ports:
-    - "80:80"
-  restart: unless-stopped
+version: "3"
 
+service:
+  wormhole-tracker:
+    build: .
+    environment:
+      - CLIENT_ID
+      - CLIENT_KEY
+      - REDIRECT_URI
+      - COOKIE_SECRET
+    ports:
+      - "80:80"
+    restart_policy:
+      condition: on-failure
+      delay: 5s
+      max_attempts: 3
+      window: 120s
