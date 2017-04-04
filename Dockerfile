@@ -1,5 +1,10 @@
 FROM python:3.6
 
+ARG CLIENT_ID
+ARG CLIENT_KEY
+ARG REDIRECT_URI
+ARG COOKIE_SECRET
+
 RUN apt-get update && apt-get install -y --force-yes nginx
 RUN apt-get install net-tools nano htop
 
