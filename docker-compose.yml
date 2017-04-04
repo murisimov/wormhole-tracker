@@ -10,7 +10,7 @@ services:
 
   wormhole-tracker:
     build: .
-  depends_on:
-    - nginx
+    depends_on:
+      - nginx
 
 
