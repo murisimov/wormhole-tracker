@@ -1,12 +1,13 @@
-image: python:3.6
-
-services:
-  - nginx:1.10
-
 stages:
   - deploy
 
+before_script:
+  - docker info
+  - pip install docker-compose
+
 deploy:
-  script: bash deploy.sh
+  script:
+    - docker-compose build
   stage: deploy
+
 
