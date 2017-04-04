@@ -10,8 +10,3 @@ services:
       - COOKIE_SECRET
     ports:
       - "80:80"
-    restart_policy:
-      condition: on-failure
-      delay: 5s
-      max_attempts: 3
-      window: 120s
