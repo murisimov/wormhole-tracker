@@ -8,7 +8,7 @@ ARG COOKIE_SECRET
 RUN apt-get update && apt-get install -y --force-yes nginx
 RUN apt-get install net-tools nano htop
 
-ENV app
+ENV app wormhole-tracker
 ENV app_build /srv/${app}
 ENV app_home /home/${app}
 
