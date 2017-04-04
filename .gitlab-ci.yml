@@ -3,7 +3,6 @@ stages:
 
 before_script:
   - docker info
-  - pip install docker-compose
 
 deploy:
   script:
