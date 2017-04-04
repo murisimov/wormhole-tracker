@@ -1,6 +1,7 @@
 FROM python:3.6
 
 RUN apt-get update && apt-get install -y --force-yes nginx
+RUN apt-get install net-tools nano htop
 
 ENV app_build wormhole-tracker
 ENV app_home /home/wormhole-tracker

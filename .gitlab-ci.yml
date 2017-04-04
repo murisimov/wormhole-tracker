@@ -7,10 +7,10 @@ before_script:
 
 deploy:
   script:
-    - docker-compose build
+    - docker build -t wormhole-tracker --build-arg CLIENT_ID=$CLIENT_ID --build-arg CLIENT_KEY=$CLIENT_KEY --build-arg REDIRECT_URI=$REDIRECT_URI --build-arg COOKIE_SECRET=$COOKIE_SECRET .
   stage: deploy
 
 run:
   script:
-    - docker-compose up -d
+    - docker run --name wormhole-tracker -p 80:80 -t -d wormhole-tracker bash
   stage: run
