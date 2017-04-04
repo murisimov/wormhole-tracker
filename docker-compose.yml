@@ -7,6 +7,7 @@ services:
       - "80:80"
     restart: always
 
+
   wormhole-tracker:
     build: .
   depends_on: nginx
