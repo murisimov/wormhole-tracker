@@ -50,7 +50,7 @@ fi
 
 # Check if correct python version is installed
 if [ -z "$(which python${py_version} 2>/dev/null | grep -E "(/\w+)+/python${py_version}")" ]; then
-    print 'Seems like python3.6 is not installed. Please install python3.6 first.'
+    print "Seems like python${py_version} is not installed. Please install python${py_version} first."
     exit 1
 fi
 
