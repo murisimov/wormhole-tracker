@@ -1,9 +1,15 @@
 /* This file is part of wormhole-tracker package released under
    the GNU GPLv3 license. See the LICENSE file for more information. */
 
+html {
+  height: 100%;
+}
 
 body {
-    background: url("/static/images/backgrounds/caldari.jpg");
+  background: url("/static/images/backgrounds/caldari.jpg");
+  width: 90%;
+  height: 75%;
+  margin: 0 auto;
 }
 
 /* D3.js style */

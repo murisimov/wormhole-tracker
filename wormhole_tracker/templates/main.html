@@ -15,7 +15,7 @@
 
 {% block body %}
   <br />
-  <div class="row">
+  <div id="main_container" class="row">
     <div class="text-center">
       <a href="javascript:void(0)" class="btn btn-warning" id="status">
         Tracking disabled
@@ -23,7 +23,7 @@
     </div>
     <br/>
 
-    <div class="" id="warning">
+    <div class="text-center" id="warning">
 
     </div>
     <br />
@@ -40,6 +40,11 @@
         </a>
       </span>
       <span>
+        <a id="reset" class="btn btn-danger">
+          Reset
+        </a>
+      </span>
+      <span>
         <a href="/signout" class="btn btn-danger">
           Sign out
         </a>
@@ -47,14 +52,15 @@
     </div>
     <br />
 
-    <div class="text-center">
-      <div id="tree-simple" class="text-center"> </div>
+    <div id="route_container" class="text-center">
+      <div id="path" class="text-center"> </div>
     </div>
   </div>
 {% end %}
 
 {% block script %}
   <script src="//d3js.org/d3.v3.min.js"></script>
+  <script src="/static/js/auxiliaries.js"></script>
   <script src="/static/js/graph.js"></script>
   <script src="/static/js/main.js"></script>
 {% end %}

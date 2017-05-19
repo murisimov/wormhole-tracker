@@ -1,4 +1,3 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 #
 # This file is part of wormhole-tracker package released under
@@ -40,6 +39,7 @@ setup(
     install_requires=[
         'setuptools',
         'tornado==4.4',
+        #'futures>=3.0.5',
     ],
     entry_points={
         'console_scripts': [
