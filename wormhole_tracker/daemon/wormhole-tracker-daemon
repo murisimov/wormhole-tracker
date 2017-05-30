@@ -15,7 +15,7 @@
 APP_NAME='wormhole-tracker'
 APP_HOME="/home/${APP_NAME}"
 
-COMMAND="/home/${APPNAME}/.envs/${APPNAME}/bin/${APPNAME}"
+COMMAND="${APP_HOME}/.envs/${APP_NAME}/bin/${APP_NAME}"
 SCRIPT="${COMMAND}"
 
 USER="${APP_NAME}"
