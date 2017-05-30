@@ -7,8 +7,8 @@ before_script:
 
 deploy:
   script:
-    - docker stop wormhole-tracker 2>/dev/null
-    - docker rm wormhole-tracker 2>/dev/null
+    - docker stop wormhole-tracker || true
+    - docker rm wormhole-tracker || true
     - docker build -t wormhole-tracker --build-arg CLIENT_ID=$CLIENT_ID --build-arg CLIENT_KEY=$CLIENT_KEY --build-arg REDIRECT_URI=$REDIRECT_URI --build-arg COOKIE_SECRET=$COOKIE_SECRET .
   stage: deploy
 
