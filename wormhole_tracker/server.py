@@ -35,7 +35,7 @@ class App(Application):
     def __init__(self, client_id, client_key, routes, settings):
         """
         Instantiate application object
-        
+
         :argument client_id:   EVE app Client ID
         :argument client_key:  EVE app Secret Key
         Both application id and secret key, which can
@@ -51,13 +51,13 @@ class App(Application):
     def spawn(self, callback, *args, **kwargs):
         """
         Shortcut for spawning callback on IOLoop
-        
+
         Since WebSocketHandler main methods do not support
         async, while we still don't want to block anything,
         we call IOLoop.spawn_callback for help - once we
         passed a callback it will be executed on the next
         IOLoop iteration.
-        
+
         :argument callback: callback to call
         :argument args:     callback arguments
         :argument kwargs:   key word arguments
@@ -67,10 +67,10 @@ class App(Application):
     async def authorize(self, code, refresh=False):
         """
         Authorize user via API and get/refresh credentials data
-        
+
         :argument code:   either user's 'authorization_code' or 'refresh_token'
         :argument refresh:     do we need to use the `code` as a refresh_token?
-        
+
         1. Get access token with the  `code`
         2. Verify the access token and get character info
         3. Set or update character database data
@@ -145,7 +145,7 @@ class App(Application):
         """
         Fetch specific character info, re-authorize
         via API if access token became obsolete.
-        
+
         :argument user_id: user id
         :argument uri:     uri to fetch (/location/ in our case)
         :argument method:  HTTP method
