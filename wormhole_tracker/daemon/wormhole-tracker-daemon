@@ -12,23 +12,25 @@
 # Description:       wormhole-tracker daemon
 ### END INIT INFO
 
-APPNAME='wormhole-tracker'
+APP_NAME='wormhole-tracker'
+APP_HOME="/home/${APP_NAME}"
 
-SCRIPT="/home/${APPNAME}/.envs/${APPNAME}/bin/${APPNAME}"
+COMMAND="${APP_HOME}/.envs/${APP_NAME}/bin/${APP_NAME}"
+SCRIPT="${COMMAND}"
 
-USER="${APPNAME}"
+USER="${APP_NAME}"
 GROUP=''
 
 if [ ${GROUP} ]; then
-    RUNAS=${GROUP}
+    RUN_AS=${GROUP}
 elif [ ${USER} ]; then
-    RUNAS=${USER}
+    RUN_AS=${USER}
 else
-    RUNAS=$(whoami)
+    RUN_AS=$(whoami)
 fi
 
-PIDFILE="/home/${APPNAME}/${APPNAME}.pid"
-LOGFILE="/home/${APPNAME}/${APPNAME}.log"
+PIDFILE="/home/${APP_NAME}/${APP_NAME}.pid"
+LOGFILE="/home/${APP_NAME}/${APP_NAME}.log"
 
 start() {
     if ! [ -d ${PIDFILE%/*} ] ; then
@@ -44,7 +46,7 @@ start() {
 
     # Try to start service
     if [ ${GROUP} ]; then
-        if sg ${RUNAS} -c "${CMD}"  > "${PIDFILE}"; then
+        if sg ${RUN_AS} -c "${CMD}"  > "${PIDFILE}"; then
             echo 'Service started' >&2
             exit 0
         else
@@ -52,7 +54,7 @@ start() {
             return 1
         fi
     else
-        if su -c "${CMD}" ${RUNAS} > "${PIDFILE}"; then
+        if su -c "${CMD}" ${RUN_AS} > "${PIDFILE}"; then
             echo 'Service started' >&2
             exit 0
         else
@@ -68,7 +70,7 @@ stop() {
         return 1
     fi
     echo 'Stopping service…' >&2
-    if kill -9 $(ps aux | grep "${APPNAME}$" | grep -v grep | awk '{print $2}'); then
+    if kill -9 $(ps aux | fgrep "${COMMAND}" | grep -v grep | awk '{print $2}'); then
         rm -f ${PIDFILE}
         echo 'Service stopped.'
     else
@@ -77,7 +79,7 @@ stop() {
 }
 
 status() {
-    printf "%-50s" "Checking ${APPNAME}..."
+    printf "%-50s" "Checking ${APP_NAME}..."
     if [ -f ${PIDFILE} ]; then
         PID=$(cat ${PIDFILE})
         if [ -z "$(ps axf | grep ${PID} | grep -v grep)" ]; then
@@ -93,12 +95,13 @@ status() {
 wait_cleanup() {
     counter=0
     echo 'Waiting for previous process to clean up...'
-    while [ -n "$(ps aux | grep "${APPNAME}$"  | grep -v grep | awk '{print $2}')" ]; do
+    while [ -n "$(ps aux | fgrep "${COMMAND}" | grep -v grep | awk '{print $2}')" ]; do
         if [[ ${counter} = 3 ]]; then
            break
         fi
         echo '...'
         let "counter += 1"
+        echo ${counter}
         sleep 3
     done
 }

@@ -1,8 +1,21 @@
-image: python:3.6
+stages:
+  - deploy
+  - run
 
-services:
-  - nginx:1.10
+before_script:
+  - docker info
 
 deploy:
-  script: deploy.sh
+  script:
+    - docker stop wormhole-tracker || true # Stop the container
+    - docker rm wormhole-tracker || true   # Remove the container
+    - docker rmi wormhole-tracker || true  # Remove the image
+    - docker build -t wormhole-tracker --build-arg CLIENT_ID=$CLIENT_ID --build-arg CLIENT_KEY=$CLIENT_KEY --build-arg REDIRECT_URI=$REDIRECT_URI --build-arg COOKIE_SECRET=$COOKIE_SECRET .
+  stage: deploy
 
+run:
+  script:
+    - docker run --name wormhole-tracker -p 80:80 -t -d wormhole-tracker bash
+    - docker exec wormhole-tracker service nginx start
+    - docker exec wormhole-tracker /home/wormhole-tracker/wormhole-tracker-daemon start
+  stage: run

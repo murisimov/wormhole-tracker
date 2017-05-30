@@ -1,0 +1,12 @@
+version: "3.0"
+
+services:
+  wormhole-tracker:
+    build: .
+    environment:
+      - CLIENT_ID
+      - CLIENT_KEY
+      - REDIRECT_URI
+      - COOKIE_SECRET
+    ports:
+      - "80:80"

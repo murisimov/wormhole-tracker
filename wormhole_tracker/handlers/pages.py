@@ -23,4 +23,3 @@ class MainHandler(BaseHandler):
             'user': user
         }
         self.render("main.html", **kwargs)
-
